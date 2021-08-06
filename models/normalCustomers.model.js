@@ -15,7 +15,7 @@ const schema = new mongoose.Schema({
             message: 'Please enter a valid phone number of 12 digits',
             validator: function (p) {
                 const { length } = p.toString();
-                return length === 11;
+                return length === 12;
             },
         },
     },

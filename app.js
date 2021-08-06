@@ -9,6 +9,7 @@ const AppError = require('./utils/AppError');
 const tilesRoute = require('./routes/products.route');
 const normalCustomersRoute = require('./routes/normalCustomers.route');
 const vipCustomersRoute = require('./routes/vipCustomers.route');
+const shopsRoute = require('./routes/shops.route');
 const employeesRoute = require('./routes/employees.route');
 const suppliersRoute = require('./routes/suppliers.route');
 const typesRoute = require('./routes/types.route');
@@ -42,19 +43,20 @@ app.listen(port, () => {
         res.status(200).send(`Server running at PORT ${port}`);
     });
 
-    app.use('/products', tilesRoute);
+    // app.use('/products', tilesRoute);
     app.use('/normal-customers', normalCustomersRoute);
     app.use('/vip-customers', vipCustomersRoute);
-    app.use('/employees', employeesRoute);
-    app.use('/suppliers', suppliersRoute);
-    app.use('/types', typesRoute);
-    app.use('/units', unitsRoute);
-    app.use('/inventories', inventoriesRoute);
-    // app.use('/sales', salesRoute);
-    app.use('/expenses', expensesRoute);
-    // app.use('/categories', protect, categoriesRoute);
-    // app.use('/orders', protect, ordersRoute);
-    app.use('/auth', authRoute);
+    app.use('/shops', shopsRoute);
+    // app.use('/employees', employeesRoute);
+    // app.use('/suppliers', suppliersRoute);
+    // app.use('/types', typesRoute);
+    // app.use('/units', unitsRoute);
+    // app.use('/inventories', inventoriesRoute);
+    // // app.use('/sales', salesRoute);
+    // app.use('/expenses', expensesRoute);
+    // // app.use('/categories', protect, categoriesRoute);
+    // // app.use('/orders', protect, ordersRoute);
+    // app.use('/auth', authRoute);
 
     app.use('*', (req, res, next) => next(new AppError(`Cannot find ${req.originalUrl} on the server!`, 404)));
 
