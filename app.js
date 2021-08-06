@@ -8,6 +8,7 @@ const AppError = require('./utils/AppError');
 
 const tilesRoute = require('./routes/products.route');
 const normalCustomersRoute = require('./routes/normalCustomers.route');
+const vipCustomersRoute = require('./routes/vipCustomers.route');
 const employeesRoute = require('./routes/employees.route');
 const suppliersRoute = require('./routes/suppliers.route');
 const typesRoute = require('./routes/types.route');
@@ -43,6 +44,7 @@ app.listen(port, () => {
 
     app.use('/products', tilesRoute);
     app.use('/normal-customers', normalCustomersRoute);
+    app.use('/vip-customers', vipCustomersRoute);
     app.use('/employees', employeesRoute);
     app.use('/suppliers', suppliersRoute);
     app.use('/types', typesRoute);
