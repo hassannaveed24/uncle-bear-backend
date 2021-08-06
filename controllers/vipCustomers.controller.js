@@ -9,7 +9,11 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
 
     const results = await Model.paginate(
         {
-            $or: [{ name: { $regex: `${search}`, $options: 'i' } }],
+            $or: [
+                { name: { $regex: `${search}`, $options: 'i' } },
+                { phone: { $regex: `${search}`, $options: 'i' } },
+                { createdShop: { $regex: `${search}`, $options: 'i' } },
+            ],
         },
         { projection: { __v: 0 }, lean: true, page, limit, sort }
     );
