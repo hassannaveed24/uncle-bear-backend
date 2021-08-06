@@ -30,6 +30,6 @@ const schema = new mongoose.Schema({
 
 schema.plugin(mongoosePagiante);
 
-const Model = mongoose.model('Customer', schema);
+const Model = mongoose.model('normalCustomer', schema);
 
 module.exports = Model;

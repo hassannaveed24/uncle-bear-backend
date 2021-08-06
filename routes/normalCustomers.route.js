@@ -1,10 +1,10 @@
 const router = require('express').Router();
 
-const { getAll, addOne, addMany, edit, remove } = require('../controllers/customers.controller');
+const { getAll, addOne, addMany, edit, remove } = require('../controllers/normalCustomers.controller');
 
 router.route('/').get(getAll);
 router.route('/').post(addOne);
-router.route('/many').post(addMany);
+// router.route('/many').post(addMany);
 router.route('/id/:id').patch(edit);
 router.route('/id/:id').delete(remove);
 

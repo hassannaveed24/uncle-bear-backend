@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const _ = require('lodash');
-const Model = require('../models/customers.model');
+const Model = require('../models/normalCustomers.model');
 const { catchAsync } = require('./errors.controller');
 const AppError = require('../utils/AppError');
 
@@ -30,7 +30,7 @@ module.exports.addMany = catchAsync(async function (req, res, next) {
 });
 
 module.exports.addOne = catchAsync(async function (req, res, next) {
-    const newDoc = _.pick(req.body, ['name', 'phone']);
+    const newDoc = _.pick(req.body, ['name', 'phone', 'createdShop']);
     await Model.create(newDoc);
     res.status(200).send();
 });
@@ -40,7 +40,7 @@ module.exports.edit = catchAsync(async function (req, res, next) {
 
     if (!mongoose.isValidObjectId(id)) return next(new AppError('Please enter a valid id', 400));
 
-    const newDoc = _.pick(req.body, ['name', 'phone']);
+    const newDoc = _.pick(req.body, ['name', 'phone', 'createdShop']);
 
     if (!Object.keys(newDoc).length) return next(new AppError('Please enter a valid customer', 400));
 
