@@ -10,6 +10,7 @@ const tilesRoute = require('./routes/products.route');
 const normalCustomersRoute = require('./routes/normalCustomers.route');
 const vipCustomersRoute = require('./routes/vipCustomers.route');
 const shopsRoute = require('./routes/shops.route');
+const productGroups = require('./routes/productGroups.route');
 const employeesRoute = require('./routes/employees.route');
 const suppliersRoute = require('./routes/suppliers.route');
 const typesRoute = require('./routes/types.route');
@@ -47,6 +48,7 @@ app.listen(port, () => {
     app.use('/normal-customers', normalCustomersRoute);
     app.use('/vip-customers', vipCustomersRoute);
     app.use('/shops', shopsRoute);
+    app.use('/product-groups', productGroups);
     // app.use('/employees', employeesRoute);
     // app.use('/suppliers', suppliersRoute);
     // app.use('/types', typesRoute);
