@@ -1,30 +1,65 @@
 const mongoose = require('mongoose');
 const _ = require('lodash');
 const Model = require('../models/products.model');
-const Type = require('../models/types.model');
+const ProductGroup = require('../models/productGroups.model');
 const { catchAsync } = require('./errors.controller');
 const AppError = require('../utils/AppError');
+
+// [
+//     {
+//         group: {},
+//         products: [{}, {}],
+//     },
+// ];
+
+// {  }
 
 module.exports.getAll = catchAsync(async function (req, res, next) {
     const { page, limit, sort, search } = req.query;
 
-    const results = await Model.paginate(
-        {
-            $or: [{ title: { $regex: `${search}`, $options: 'i' } }],
-        },
-        {
-            projection: { __v: 0 },
-            populate: { path: 'type', select: '_id title' },
-            lean: true,
-            page,
-            limit,
-            sort,
-        }
-    );
+    // const sort = {
+    //     '2i24yj': {
+    //         name: -1
+    //     }.
+    //     'ui325kj': {
+    //         price: 1
+    //     }
+    // }
 
-    res.status(200).json(
-        _.pick(results, ['docs', 'totalDocs', 'hasPrevPage', 'hasNextPage', 'totalPages', 'pagingCounter'])
-    );
+    // const page = {
+    //     '2i24yj': 1.
+    //     'ui325kj': 2
+    // }
+
+    const results = await Model.aggregate([
+        // {
+        //     $group: {
+        //         // Each `_id` must be unique, so if there are multiple
+        //         // documents with the same age, MongoDB will increment `count`.
+        //         _id: '$registeredGroupId',
+
+        //         products: {
+        //             $push: {
+        //                 name: '$name',
+        //                 salePrice: '$salePrice',
+        //                 costPrice: '$costPrice',
+        //                 description: '$description',
+        //                 createdAt: '$createdAt',
+        //             },
+        //         },
+        //     },
+        // },
+        {
+            $lookup: {
+                from: 'ProductGroup',
+                localField: 'registeredGroupId',
+                foreignField: '_id',
+                as: 'group_doc',
+            },
+        },
+    ]);
+
+    res.status(200).json(results);
 });
 
 module.exports.addMany = catchAsync(async function (req, res, next) {
@@ -44,11 +79,11 @@ module.exports.addMany = catchAsync(async function (req, res, next) {
 });
 
 module.exports.addOne = catchAsync(async function (req, res, next) {
-    const newDoc = _.pick(req.body, ['title', 'modelNumber', 'type']);
+    const newDoc = _.pick(req.body, ['registeredGroupId', 'name', 'salePrice', 'costPrice', 'description']);
 
-    if (Object.keys(newDoc).length < 3) return next(new AppError('Please enter a valid product', 400));
+    if (Object.keys(newDoc).length < 4) return next(new AppError('Please enter a valid product', 400));
 
-    const type = await Type.findById(newDoc.type, { title: 0, createdAt: 0, __v: 0 }).lean();
+    const type = await ProductGroup.findById(newDoc.registeredGroupId, { title: 0, createdAt: 0, __v: 0 }).lean();
 
     if (!type) return next(new AppError('Type does not exist', 404));
 
@@ -62,13 +97,13 @@ module.exports.edit = catchAsync(async function (req, res, next) {
 
     if (!mongoose.isValidObjectId(id)) return next(new AppError('Please enter a valid id', 400));
 
-    const newDoc = _.pick(req.body, ['title', 'modelNumber', 'type']);
+    const newDoc = _.pick(req.body, ['registeredGroupId', 'name', 'salePrice', 'costPrice', 'description']);
 
     if (!Object.keys(newDoc).length) return next(new AppError('Please enter a valid product', 400));
 
-    const type = await Type.findById(newDoc.type).lean();
+    const registeredGroup = await ProductGroup.findById(newDoc.registeredGroupId).lean();
 
-    if (!type) return next('Type does not exist', 404);
+    if (!registeredGroup) return next(new AppError('Registered Group does not exist', 404));
 
     await Model.updateOne({ _id: id }, newDoc, { runValidators: true });
 
