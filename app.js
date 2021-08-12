@@ -13,6 +13,7 @@ const shopsRoute = require('./routes/shops.route');
 const productGroupsRoute = require('./routes/productGroups.route');
 const productsRoute = require('./routes/products.route');
 const rawMaterialExpensesRoute = require('./routes/rawMaterialExpenses.route');
+const shopExpensesRoute = require('./routes/shopExpenses.route');
 const employeesRoute = require('./routes/employees.route');
 const suppliersRoute = require('./routes/suppliers.route');
 const typesRoute = require('./routes/types.route');
@@ -53,6 +54,7 @@ app.listen(port, () => {
     app.use('/product-groups', productGroupsRoute);
     app.use('/products', productsRoute);
     app.use('/raw-material-expenses', rawMaterialExpensesRoute);
+    app.use('/shop-expenses', shopExpensesRoute);
     // app.use('/employees', employeesRoute);
     // app.use('/suppliers', suppliersRoute);
     // app.use('/types', typesRoute);
