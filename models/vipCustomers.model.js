@@ -9,15 +9,9 @@ const schema = new mongoose.Schema({
         maxlength: [255, 'Only 255 characters are allowed in name'],
     },
     phone: {
-        type: Number,
-        required: [true, 'Please enter a phone number'],
-        validate: {
-            message: 'Please enter a valid phone number of 12 digits',
-            validator: function (p) {
-                const { length } = p.toString();
-                return length === 12;
-            },
-        },
+        type: String,
+        minlength: [3, 'Please enter at least 3 characters as phone number'],
+        maxlength: [20, 'Maximum 20 characters are allowed in name'],
     },
     balance: {
         type: Number,
