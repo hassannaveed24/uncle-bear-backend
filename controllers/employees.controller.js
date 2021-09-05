@@ -9,7 +9,13 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
 
     const results = await Model.paginate(
         {
-            $or: [{ name: { $regex: `${search}`, $options: 'i' } }],
+            $or: [
+                { name: { $regex: `${search}`, $options: 'i' } },
+                { phone: { $regex: `${search}`, $options: 'i' } },
+                { idcard: { $regex: `${search}`, $options: 'i' } },
+                { email: { $regex: `${search}`, $options: 'i' } },
+                { description: { $regex: `${search}`, $options: 'i' } },
+            ],
         },
         { projection: { __v: 0 }, lean: true, page, limit, sort }
     );
@@ -30,7 +36,16 @@ module.exports.addMany = catchAsync(async function (req, res, next) {
 });
 
 module.exports.addOne = catchAsync(async function (req, res, next) {
-    const newDoc = _.pick(req.body, ['name', 'phone', 'cnic', 'address', 'salary']);
+    const newDoc = _.pick(req.body, [
+        'name',
+        'phone',
+        'idcard',
+        'email',
+        'description',
+        'salary',
+        'hireDate',
+        'createdShop',
+    ]);
     await Model.create(newDoc);
     res.status(200).send();
 });
@@ -40,7 +55,16 @@ module.exports.edit = catchAsync(async function (req, res, next) {
 
     if (!mongoose.isValidObjectId(id)) return next(new AppError('Please enter a valid id', 400));
 
-    const newDoc = _.pick(req.body, ['name', 'phone', 'cnic', 'address', 'salary']);
+    const newDoc = _.pick(req.body, [
+        'name',
+        'phone',
+        'idcard',
+        'email',
+        'description',
+        'salary',
+        'hireDate',
+        'createdShop',
+    ]);
 
     if (!Object.keys(newDoc).length) return next(new AppError('Please enter a valid employee', 400));
 

@@ -1,6 +1,6 @@
 const router = require('express').Router();
 
-const { getAll, addOne, addMany, edit, remove } = require('../controllers/employees.controller');
+const { getAll, addOne, addMany, edit, remove } = require('../controllers/salariesExpenses.controller');
 
 router.route('/').get(getAll);
 router.route('/').post(addOne);
