@@ -30,8 +30,8 @@ module.exports.addMany = catchAsync(async function (req, res, next) {
 });
 
 module.exports.addOne = catchAsync(async function (req, res, next) {
-    const newDoc = _.pick(req.body, ['name', 'phone', 'createdShop']);
-    await Model.create(newDoc);
+    const newDoc = _.pick(req.body, ['name', 'phone']);
+    await Model.create({ ...newDoc, createdShop: res.locals.shop._id });
     res.status(200).send();
 });
 

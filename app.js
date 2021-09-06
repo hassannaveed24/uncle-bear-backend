@@ -25,6 +25,7 @@ const expensesRoute = require('./routes/expenses.route');
 
 const authRoute = require('./routes/auth.route');
 const { errorController } = require('./controllers/errors.controller');
+const { restrictToShop } = require('./middlewares/createdShop.middleware');
 
 const app = express();
 

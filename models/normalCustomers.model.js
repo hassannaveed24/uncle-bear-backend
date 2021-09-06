@@ -16,9 +16,9 @@ const schema = new mongoose.Schema({
     // createdBy: { type: mongoose.ObjectId, ref: 'User', select: false },
     createdAt: { type: Date, required: true, default: Date.now() },
     createdShop: {
-        type: String,
-        required: [true, 'Please enter shop address'],
-        maxlength: [255, 'Only 255 characters are allowed in shop'],
+        type: mongoose.Types.ObjectId,
+        ref: 'Shop',
+        required: [true, 'Please enter shop'],
     },
 });
 
