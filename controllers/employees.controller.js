@@ -36,17 +36,8 @@ module.exports.addMany = catchAsync(async function (req, res, next) {
 });
 
 module.exports.addOne = catchAsync(async function (req, res, next) {
-    const newDoc = _.pick(req.body, [
-        'name',
-        'phone',
-        'idcard',
-        'email',
-        'description',
-        'salary',
-        'hireDate',
-        'createdShop',
-    ]);
-    await Model.create(newDoc);
+    const newDoc = _.pick(req.body, ['name', 'phone', 'idcard', 'email', 'description', 'salary', 'hireDate']);
+    await Model.create({ ...newDoc, createdShop: res.locals.shop._id });
     res.status(200).send();
 });
 
@@ -55,20 +46,11 @@ module.exports.edit = catchAsync(async function (req, res, next) {
 
     if (!mongoose.isValidObjectId(id)) return next(new AppError('Please enter a valid id', 400));
 
-    const newDoc = _.pick(req.body, [
-        'name',
-        'phone',
-        'idcard',
-        'email',
-        'description',
-        'salary',
-        'hireDate',
-        'createdShop',
-    ]);
+    const newDoc = _.pick(req.body, ['name', 'phone', 'idcard', 'email', 'description', 'salary', 'hireDate']);
 
     if (!Object.keys(newDoc).length) return next(new AppError('Please enter a valid employee', 400));
 
-    await Model.updateOne({ _id: id }, newDoc, { runValidators: true });
+    await Model.updateOne({ _id: id }, { ...newDoc, createdShop: res.locals.shop._id }, { runValidators: true });
 
     res.status(200).json();
 });
