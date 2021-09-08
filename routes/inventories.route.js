@@ -1,12 +1,21 @@
 const router = require('express').Router();
 
 const autoParams = require('../utils/autoParams');
-const { getAll, addOne, remove, pay, addMany } = require('../controllers/inventories.controller');
+const {
+    getAll,
+    addOne,
+    remove,
+    edit,
+    pay,
+    addMany,
+    getTransactions,
+} = require('../controllers/inventories.controller');
+const { restrictToShop } = require('../middlewares/createdShop.middleware');
 
 router.get('/', autoParams, getAll);
-router.route('/').post(addOne);
-router.route('/many').post(addMany);
-router.route('/pay/id/:id/amount/:amount').post(pay);
+router.get('/transactions', autoParams, getTransactions);
+router.post('/', restrictToShop, addOne);
+router.patch('/id/:id', restrictToShop, edit);
 router.route('/id/:id').delete(remove);
 
 module.exports = router;

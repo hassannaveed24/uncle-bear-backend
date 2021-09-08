@@ -59,10 +59,10 @@ app.listen(port, () => {
     app.use('/shop-expenses', shopExpensesRoute);
     app.use('/salaries', salariesExpensesRoute);
     app.use('/employees', employeesRoute);
+    app.use('/inventories', inventoriesRoute);
     // app.use('/suppliers', suppliersRoute);
     // app.use('/types', typesRoute);
     // app.use('/units', unitsRoute);
-    // app.use('/inventories', inventoriesRoute);
     // // app.use('/sales', salesRoute);
     // app.use('/expenses', expensesRoute);
     // // app.use('/categories', protect, categoriesRoute);

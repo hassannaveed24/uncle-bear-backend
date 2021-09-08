@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const _ = require('lodash');
-const { Model, convertUnitsOfInventory } = require('../models/inventories.model');
+const Model = require('../models/inventories.model');
 const Product = require('../models/products.model');
 const Unit = require('../models/units.model');
 const Supplier = require('../models/suppliers.model');
@@ -8,15 +8,41 @@ const { catchAsync } = require('./errors.controller');
 const AppError = require('../utils/AppError');
 
 module.exports.getAll = catchAsync(async function (req, res, next) {
-    const { page, limit, sort } = req.query;
+    const { page, limit, search } = req.query;
+
+    // const results = await Model.paginate(
+    //     {
+    //         $or: [{ item: { $regex: `${search}`, $options: 'i' } }],
+    //     },
+    //     { projection: { __v: 0 }, lean: true, page, limit }
+    // );
+
+    const docs = await Model.aggregate([
+        {
+            $match: {
+                $or: [{ item: { $regex: `${search}`, $options: 'i' } }],
+            },
+        },
+        { $group: { _id: '$item', quantity: { $sum: '$quantity' } } },
+        {
+            $project: { item: '$_id', quantity: '$quantity', _id: 0 },
+        },
+    ]);
+    res.status(200).send(docs);
+});
+
+module.exports.getTransactions = catchAsync(async function (req, res, next) {
+    const { page, limit, search } = req.query;
 
     const results = await Model.paginate(
-        {},
-        { projection: { __v: 0 }, populate: { path: 'supplier', select: '-__v' }, lean: true, page, limit, sort }
+        {
+            $or: [
+                { item: { $regex: `${search}`, $options: 'i' } },
+                { description: { $regex: `${search}`, $options: 'i' } },
+            ],
+        },
+        { projection: { __v: 0 }, lean: true, page, limit }
     );
-
-    // eslint-disable-next-line no-param-reassign
-    results.docs.forEach((d) => (d = convertUnitsOfInventory(d)));
 
     res.status(200).json(
         _.pick(results, ['docs', 'totalDocs', 'hasPrevPage', 'hasNextPage', 'totalPages', 'pagingCounter'])
@@ -24,52 +50,38 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
 });
 
 module.exports.addOne = catchAsync(async function (req, res, next) {
-    const body = _.pick(req.body, ['supplier', 'sourcePrice', 'product', 'quantity', 'units', 'paid']);
+    const newDoc = _.pick(req.body, ['item', 'quantity', 'description']);
 
-    if (Object.keys(body).length !== 6) return next(new AppError('Please enter a valid inventory', 400));
+    await Model.create({ ...newDoc, createdShop: res.locals.shop._id });
+    res.status(200).send();
+});
 
-    if (!mongoose.isValidObjectId(body.supplier)) return next(new AppError('Please enter a valid supplier id', 400));
+module.exports.edit = catchAsync(async function (req, res, next) {
+    const { id } = req.params;
 
-    const supplier = await Supplier.findById(body.supplier).lean();
+    if (!mongoose.isValidObjectId(id)) return next(new AppError('Please enter a valid id', 400));
 
-    if (!supplier) return next(new AppError('Supplier does not exist', 404));
+    const newDoc = _.pick(req.body, ['item', 'quantity', 'description']);
 
-    if (!mongoose.isValidObjectId(body.product)) return next(new AppError('Please enter a valid product id', 400));
+    if (!Object.keys(newDoc).length) return next(new AppError('Please enter a valid transaction', 400));
 
-    const product = await Product.findById(body.product, { __v: 0 })
-        .populate({
-            path: 'type',
-            select: '_id',
-        })
-        .lean();
+    await Model.updateOne({ _id: id }, { ...newDoc, createdShop: res.locals.shop._id }, { runValidators: true });
 
-    if (!product) return next(new AppError('Product does not exist', 400));
+    res.status(200).json();
+});
 
-    body.units = [...new Set(body.units)];
-    const unitIds = [];
+module.exports.remove = catchAsync(async function (req, res, next) {
+    let ids = req.params.id.split(',');
 
-    for (const u of body.units) {
-        if (!mongoose.isValidObjectId(u)) return next(new AppError('Invalid unit id(s)', 400));
-        unitIds.push(mongoose.Types.ObjectId(u));
+    for (const id of ids) {
+        if (!mongoose.isValidObjectId(id)) return next(new AppError('Please enter valid id(s)', 400));
     }
 
-    const units = await Unit.find({ _id: { $in: unitIds } }, { __v: 0 })
-        .populate({ path: 'type', select: '-__v' })
-        .lean();
+    ids = ids.map((id) => mongoose.Types.ObjectId(id));
 
-    if (units.length !== unitIds.length) return next(new AppError('Invalid units', 400));
+    await Model.deleteMany({ _id: { $in: ids } });
 
-    const areValidUnits = units.every((u) => u.type._id.toString() === product.type._id.toString());
-    if (!areValidUnits) return next(new AppError('Please enter units that are suitable for the product', 400));
-
-    body.units = units.map((u) => ({ ..._.omit(u, ['type', 'createdAt']), unitExists: true }));
-
-    body.isRemaining = body.paid !== body.sourcePrice;
-
-    body.product = { ...product, productExists: true };
-
-    await Model.create(body);
-    res.status(200).send();
+    res.status(200).json();
 });
 
 module.exports.addMany = catchAsync(async function (req, res, next) {
@@ -166,18 +178,4 @@ module.exports.pay = catchAsync(async function (req, res, next) {
     await inventory.save();
 
     res.status(200).send();
-});
-
-module.exports.remove = catchAsync(async function (req, res, next) {
-    let ids = req.params.id.split(',');
-
-    for (const id of ids) {
-        if (!mongoose.isValidObjectId(id)) return next(new AppError('Please enter valid id(s)', 400));
-    }
-
-    ids = ids.map((id) => mongoose.Types.ObjectId(id));
-
-    await Model.deleteMany({ _id: { $in: ids } });
-
-    res.status(200).json();
 });
