@@ -5,12 +5,26 @@ const Model = require('../models/salariesExpenses.model');
 const { catchAsync } = require('./errors.controller');
 const AppError = require('../utils/AppError');
 
-module.exports.getAll = catchAsync(async function (req, res, next) {
+module.exports.getSalariesbyEmployeee = catchAsync(async function (req, res, next) {
     const { employeeId } = req.query;
 
     const result = await Model.find({ employeeId: ObjectId(employeeId) });
 
     res.status(200).send(result);
+});
+
+module.exports.getAll = catchAsync(async function (req, res, next) {
+    const { page, limit, sort, search } = req.query;
+
+    const results = await Model.paginate(
+        { createdShop: res.locals.shop._id },
+
+        { projection: { __v: 0 }, populate: { path: 'employeeId', select: '_id name' }, lean: true, page, limit, sort }
+    );
+
+    res.status(200).json(
+        _.pick(results, ['docs', 'totalDocs', 'hasPrevPage', 'hasNextPage', 'totalPages', 'pagingCounter'])
+    );
 });
 
 // module.exports.addMany = catchAsync(async function (req, res, next) {
@@ -24,8 +38,8 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
 // });
 
 module.exports.addOne = catchAsync(async function (req, res, next) {
-    const newDoc = _.pick(req.body, ['employeeId', 'description', 'createdShop', 'amount']);
-    await Model.create(newDoc);
+    const newDoc = _.pick(req.body, ['employeeId', 'description', 'amount']);
+    await Model.create({ ...newDoc, createdShop: res.locals.shop._id });
     res.status(200).send();
 });
 
@@ -34,11 +48,11 @@ module.exports.edit = catchAsync(async function (req, res, next) {
 
     if (!mongoose.isValidObjectId(id)) return next(new AppError('Please enter a valid id', 400));
 
-    const newDoc = _.pick(req.body, ['employeeId', 'description', 'createdShop', 'amount']);
+    const newDoc = _.pick(req.body, ['employeeId', 'description', 'amount']);
 
     if (!Object.keys(newDoc).length) return next(new AppError('Please enter a valid expense', 400));
 
-    await Model.updateOne({ _id: id }, newDoc, { runValidators: true });
+    await Model.updateOne({ _id: id }, { ...newDoc, createdShop: res.locals.shop._id }, { runValidators: true });
 
     res.status(200).json();
 });

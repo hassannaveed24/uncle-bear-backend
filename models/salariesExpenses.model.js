@@ -5,7 +5,7 @@ const schema = new mongoose.Schema({
     createdAt: { type: Date, required: true, default: Date.now() },
     employeeId: {
         type: mongoose.Types.ObjectId,
-        ref: 'Emplpoyee',
+        ref: 'Employee',
         required: [true, 'Employee id is required'],
     },
     description: {

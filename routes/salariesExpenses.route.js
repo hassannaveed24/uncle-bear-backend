@@ -1,11 +1,19 @@
 const router = require('express').Router();
 
-const { getAll, addOne, addMany, edit, remove } = require('../controllers/salariesExpenses.controller');
+const {
+    getAll,
+    getSalariesbyEmployeee,
+    addOne,
+    addMany,
+    edit,
+    remove,
+} = require('../controllers/salariesExpenses.controller');
+const { restrictToShop } = require('../middlewares/createdShop.middleware');
 
-router.route('/').get(getAll);
-router.route('/').post(addOne);
-// router.route('/many').post(addMany);
-router.route('/id/:id').patch(edit);
+router.get('/:employeeId', restrictToShop, getSalariesbyEmployeee);
+router.get('/', restrictToShop, getAll);
+router.post('/', restrictToShop, addOne);
+router.patch('/id/:id', restrictToShop, edit);
 router.route('/id/:id').delete(remove);
 
 module.exports = router;

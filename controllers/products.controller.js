@@ -17,28 +17,6 @@ const AppError = require('../utils/AppError');
 module.exports.getAll = catchAsync(async function (req, res, next) {
     const { page, limit, sort, search } = req.query;
 
-    // const productGroups = await mongoose.model('ProductGroup').find().lean();
-
-    // const results = await Model.aggregate([
-    //     {
-    //         $group: {
-    //             // Each `_id` must be unique, so if there are multiple
-    //             // documents with the same age, MongoDB will increment `count`.
-    //             _id: '$registeredGroupId',
-
-    //             products: {
-    //                 $push: {
-    //                     name: '$name',
-    //                     salePrice: '$salePrice',
-    //                     costPrice: '$costPrice',
-    //                     description: '$description',
-    //                     createdAt: '$createdAt',
-    //                 },
-    //             },
-    //         },
-    //     },
-    // ]);
-
     const [results, productGroups] = await Promise.all([
         Model.aggregate([
             {
