@@ -20,6 +20,7 @@ const suppliersRoute = require('./routes/suppliers.route');
 const typesRoute = require('./routes/types.route');
 const unitsRoute = require('./routes/units.route');
 const inventoriesRoute = require('./routes/inventories.route');
+const billsRoute = require('./routes/bills.route');
 const salesRoute = require('./routes/sales.route');
 const expensesRoute = require('./routes/expenses.route');
 
@@ -60,13 +61,13 @@ app.listen(port, () => {
     app.use('/salaries', salariesExpensesRoute);
     app.use('/employees', employeesRoute);
     app.use('/inventories', inventoriesRoute);
+    app.use('/bills', billsRoute);
     // app.use('/suppliers', suppliersRoute);
     // app.use('/types', typesRoute);
     // app.use('/units', unitsRoute);
     // // app.use('/sales', salesRoute);
     // app.use('/expenses', expensesRoute);
     // // app.use('/categories', protect, categoriesRoute);
-    // // app.use('/orders', protect, ordersRoute);
     // app.use('/auth', authRoute);
 
     app.use('*', (req, res, next) => next(new AppError(`Cannot find ${req.originalUrl} on the server!`, 404)));

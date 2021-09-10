@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const _ = require('lodash');
-const Model = require('../models/products.model');
+const { Model } = require('../models/products.model');
 const ProductGroup = require('../models/productGroups.model');
 const { catchAsync } = require('./errors.controller');
 const AppError = require('../utils/AppError');
@@ -17,47 +17,61 @@ const AppError = require('../utils/AppError');
 module.exports.getAll = catchAsync(async function (req, res, next) {
     const { page, limit, sort, search } = req.query;
 
-    // const sort = {
-    //     '2i24yj': {
-    //         name: -1
-    //     }.
-    //     'ui325kj': {
-    //         price: 1
-    //     }
-    // }
+    // const productGroups = await mongoose.model('ProductGroup').find().lean();
 
-    // const page = {
-    //     '2i24yj': 1.
-    //     'ui325kj': 2
-    // }
+    // const results = await Model.aggregate([
+    //     {
+    //         $group: {
+    //             // Each `_id` must be unique, so if there are multiple
+    //             // documents with the same age, MongoDB will increment `count`.
+    //             _id: '$registeredGroupId',
 
-    const results = await Model.aggregate([
-        // {
-        //     $group: {
-        //         // Each `_id` must be unique, so if there are multiple
-        //         // documents with the same age, MongoDB will increment `count`.
-        //         _id: '$registeredGroupId',
+    //             products: {
+    //                 $push: {
+    //                     name: '$name',
+    //                     salePrice: '$salePrice',
+    //                     costPrice: '$costPrice',
+    //                     description: '$description',
+    //                     createdAt: '$createdAt',
+    //                 },
+    //             },
+    //         },
+    //     },
+    // ]);
 
-        //         products: {
-        //             $push: {
-        //                 name: '$name',
-        //                 salePrice: '$salePrice',
-        //                 costPrice: '$costPrice',
-        //                 description: '$description',
-        //                 createdAt: '$createdAt',
-        //             },
-        //         },
-        //     },
-        // },
-        {
-            $lookup: {
-                from: 'ProductGroup',
-                localField: 'registeredGroupId',
-                foreignField: '_id',
-                as: 'group_doc',
+    const [results, productGroups] = await Promise.all([
+        Model.aggregate([
+            {
+                $group: {
+                    // Each `_id` must be unique, so if there are multiple
+                    // documents with the same age, MongoDB will increment `count`.
+                    _id: '$registeredGroupId',
+
+                    products: {
+                        $push: {
+                            name: '$name',
+                            salePrice: '$salePrice',
+                            costPrice: '$costPrice',
+                            description: '$description',
+                            createdAt: '$createdAt',
+                        },
+                    },
+                },
             },
-        },
+            {
+                $project: {
+                    group: '$_id',
+                    _id: 0,
+                    products: '$products',
+                },
+            },
+        ]),
+        mongoose.model('ProductGroup').find().lean(),
     ]);
+    results.forEach((result) => {
+        const found = productGroups.find((productGroup) => productGroup._id.toString() === result.group.toString());
+        result.group = found;
+    });
 
     res.status(200).json(results);
 });
