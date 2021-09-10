@@ -9,10 +9,14 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
 
     const results = await Model.paginate(
         {
-            $or: [
-                { expenseName: { $regex: `${search}`, $options: 'i' } },
-                { detail: { $regex: `${search}`, $options: 'i' } },
-                { createdShop: { $regex: `${search}`, $options: 'i' } },
+            $and: [
+                {
+                    $or: [
+                        { expenseName: { $regex: `${search}`, $options: 'i' } },
+                        { detail: { $regex: `${search}`, $options: 'i' } },
+                    ],
+                },
+                { createdShop: res.locals.shop._id },
             ],
         },
         { projection: { __v: 0 }, lean: true, page, limit, sort }
@@ -35,7 +39,7 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
 
 module.exports.addOne = catchAsync(async function (req, res, next) {
     const newDoc = _.pick(req.body, ['expenseName', 'price', 'detail', 'createdShop']);
-    await Model.create(newDoc);
+    await Model.create({ ...newDoc, createdShop: res.locals.shop._id });
     res.status(200).send();
 });
 
@@ -48,7 +52,7 @@ module.exports.edit = catchAsync(async function (req, res, next) {
 
     if (!Object.keys(newDoc).length) return next(new AppError('Please enter a valid expense', 400));
 
-    await Model.updateOne({ _id: id }, newDoc, { runValidators: true });
+    await Model.updateOne({ _id: id }, { ...newDoc, createdShop: res.locals.shop._id }, { runValidators: true });
 
     res.status(200).json();
 });

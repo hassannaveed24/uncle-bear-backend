@@ -18,9 +18,9 @@ const schema = new mongoose.Schema({
         maxlength: [255, 'Only 255 characters are allowed in detail'],
     },
     createdShop: {
-        type: String,
-        required: [true, 'Please enter shop address'],
-        maxlength: [255, 'Only 255 characters are allowed in shop'],
+        type: mongoose.Types.ObjectId,
+        ref: 'Shop',
+        required: [true, 'Please enter shop'],
     },
 });
 

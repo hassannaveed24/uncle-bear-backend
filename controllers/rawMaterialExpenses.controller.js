@@ -34,7 +34,7 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
 
 module.exports.addOne = catchAsync(async function (req, res, next) {
     const newDoc = _.pick(req.body, ['product_bought', 'price', 'detail', 'qty']);
-    await Model.create(newDoc);
+    await Model.create({ ...newDoc, createdShop: res.locals.shop._id });
     res.status(200).send();
 });
 
@@ -47,7 +47,7 @@ module.exports.edit = catchAsync(async function (req, res, next) {
 
     if (!Object.keys(newDoc).length) return next(new AppError('Please enter valid raw material expense', 400));
 
-    await Model.updateOne({ _id: id }, newDoc, { runValidators: true });
+    await Model.updateOne({ _id: id }, { ...newDoc, createdShop: res.locals.shop._id }, { runValidators: true });
 
     res.status(200).json();
 });

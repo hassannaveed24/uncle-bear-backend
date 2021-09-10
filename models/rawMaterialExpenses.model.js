@@ -21,6 +21,11 @@ const schema = new mongoose.Schema({
         type: Number,
         required: [true, 'Please enter quantity'],
     },
+    createdShop: {
+        type: mongoose.Types.ObjectId,
+        ref: 'Shop',
+        required: [true, 'Please enter shop'],
+    },
 });
 
 schema.plugin(mongoosePagiante);
