@@ -10,7 +10,7 @@ const {
 } = require('../controllers/salariesExpenses.controller');
 const { restrictToShop } = require('../middlewares/createdShop.middleware');
 
-router.get('/:employeeId', restrictToShop, getSalariesbyEmployeee);
+router.get('/employees', restrictToShop, getSalariesbyEmployeee);
 router.get('/', restrictToShop, getAll);
 router.post('/', restrictToShop, addOne);
 router.patch('/id/:id', restrictToShop, edit);

@@ -19,7 +19,14 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
                 { createdShop: res.locals.shop._id },
             ],
         },
-        { projection: { __v: 0 }, lean: true, page, limit, sort }
+        {
+            projection: { __v: 0 },
+            populate: { path: 'createdShop', select: '_id address' },
+            lean: true,
+            page,
+            limit,
+            sort,
+        }
     );
 
     res.status(200).json(

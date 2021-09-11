@@ -8,7 +8,10 @@ const AppError = require('../utils/AppError');
 module.exports.getSalariesbyEmployeee = catchAsync(async function (req, res, next) {
     const { employeeId } = req.query;
 
-    const result = await Model.find({ employeeId: ObjectId(employeeId) });
+    const result = await Model.find({ employeeId: ObjectId(employeeId) }, { __v: 0, employeeId: 0 }).populate(
+        'createdShop',
+        { _id: 1, address: 1 }
+    );
 
     res.status(200).send(result);
 });
@@ -19,7 +22,17 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
     const results = await Model.paginate(
         { createdShop: res.locals.shop._id },
 
-        { projection: { __v: 0 }, populate: { path: 'employeeId', select: '_id name' }, lean: true, page, limit, sort }
+        {
+            projection: { __v: 0 },
+            populate: [
+                { path: 'employeeId', select: '_id name' },
+                { path: 'createdShop', select: '_id address' },
+            ],
+            lean: true,
+            page,
+            limit,
+            sort,
+        }
     );
 
     res.status(200).json(

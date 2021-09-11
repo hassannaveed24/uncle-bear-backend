@@ -1,7 +1,8 @@
 const router = require('express').Router();
 
-const { getAll, addOne, edit, remove } = require('../controllers/products.controller');
+const { getAll, getbyGroups, addOne, edit, remove } = require('../controllers/products.controller');
 
+router.route('/groups').get(getbyGroups);
 router.route('/').get(getAll);
 router.route('/').post(addOne);
 // router.route('/many').post(addMany);

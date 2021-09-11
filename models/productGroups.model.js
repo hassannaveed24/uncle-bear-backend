@@ -22,7 +22,6 @@ const schema = new mongoose.Schema({
     },
     description: {
         type: String,
-        minLength: [6, 'Minimum of 6 characters are required'],
         maxLength: [255, 'Maximum of 255 characters are allowed'],
     },
     createdAt: { type: Date, required: true, default: Date.now() },

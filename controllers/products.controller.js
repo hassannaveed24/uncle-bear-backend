@@ -5,24 +5,38 @@ const ProductGroup = require('../models/productGroups.model');
 const { catchAsync } = require('./errors.controller');
 const AppError = require('../utils/AppError');
 
-// [
-//     {
-//         group: {},
-//         products: [{}, {}],
-//     },
-// ];
-
-// {  }
-
 module.exports.getAll = catchAsync(async function (req, res, next) {
+    const { page, limit, sort, search } = req.query;
+
+    const results = await Model.paginate(
+        {
+            $or: [
+                { name: { $regex: `${search}`, $options: 'i' } },
+                { description: { $regex: `${search}`, $options: 'i' } },
+            ],
+        },
+        {
+            projection: { __v: 0 },
+            populate: { path: 'registeredGroupId', select: '_id name color' },
+            lean: true,
+            page,
+            limit,
+            sort,
+        }
+    );
+
+    res.status(200).json(
+        _.pick(results, ['docs', 'totalDocs', 'hasPrevPage', 'hasNextPage', 'totalPages', 'pagingCounter'])
+    );
+});
+
+module.exports.getbyGroups = catchAsync(async function (req, res, next) {
     const { page, limit, sort, search } = req.query;
 
     const [results, productGroups] = await Promise.all([
         Model.aggregate([
             {
                 $group: {
-                    // Each `_id` must be unique, so if there are multiple
-                    // documents with the same age, MongoDB will increment `count`.
                     _id: '$registeredGroupId',
 
                     products: {
@@ -30,8 +44,6 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
                             name: '$name',
                             salePrice: '$salePrice',
                             costPrice: '$costPrice',
-                            description: '$description',
-                            createdAt: '$createdAt',
                         },
                     },
                 },
@@ -48,7 +60,7 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
     ]);
     results.forEach((result) => {
         const found = productGroups.find((productGroup) => productGroup._id.toString() === result.group.toString());
-        result.group = found;
+        result.group = { _id: found._id, name: found.name, color: found.color };
     });
 
     res.status(200).json(results);
