@@ -24,6 +24,6 @@ const schema = new mongoose.Schema({
 
 schema.plugin(mongoosePagiante);
 
-const Model = mongoose.model('normalCustomer', schema);
+const Model = mongoose.model('NormalCustomer', schema);
 
 module.exports = Model;

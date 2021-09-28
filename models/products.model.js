@@ -10,7 +10,6 @@ const productSchema = {
     name: {
         type: String,
         required: [true, 'Please enter product name'],
-        minlength: [4, 'Please enter a bare minimum of 4 characters in title'],
         maxlength: [255, 'Only 255 characters are allowed in title'],
     },
     salePrice: {

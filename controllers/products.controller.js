@@ -41,6 +41,7 @@ module.exports.getbyGroups = catchAsync(async function (req, res, next) {
 
                     products: {
                         $push: {
+                            _id: '$_id',
                             name: '$name',
                             salePrice: '$salePrice',
                             costPrice: '$costPrice',
