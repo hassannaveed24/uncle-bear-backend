@@ -58,6 +58,10 @@ const schema = new mongoose.Schema({
     total: {
         type: Number,
     },
+    vipConsumed: {
+        type: Number,
+    },
+    remainingPay: { type: Number },
     createdAt: { type: Date, required: true, default: Date.now() },
     createdShop: {
         type: mongoose.Types.ObjectId,

@@ -57,12 +57,6 @@ module.exports.addOne = catchAsync(async function (req, res, next) {
             break;
         case 'NORMAL':
             body.customer = await mongoose.model('NormalCustomer').findById(body.customer, 'name phone').lean();
-
-            break;
-        case 'VIP':
-            body.customer = await mongoose.model('VipCustomer').findById(body.customer, 'name phone balance').lean();
-            break;
-        case 'REFUND':
             break;
         default:
             break;
@@ -83,10 +77,7 @@ module.exports.addOne = catchAsync(async function (req, res, next) {
         .lean();
 
     body.products.forEach((bodyProduct) => {
-        bodyProduct.product = products.find((product) => {
-            console.log('body id', bodyProduct.product);
-            return product._id.toString() === bodyProduct.product.toString();
-        });
+        bodyProduct.product = products.find((product) => product._id.toString() === bodyProduct.product.toString());
     });
 
     let subTotal = 0;
@@ -98,16 +89,115 @@ module.exports.addOne = catchAsync(async function (req, res, next) {
     const discountAmount = Number(subTotal * body.discountPercent * 0.01);
     const total = Number(subTotal - discountAmount);
 
-    console.log(body);
-
-    await Model.create({
+    const bill = await Model.create({
         ...body,
         total,
         subTotal,
         discountAmount,
         createdShop: res.locals.shop._id,
     });
-    res.status(200).send();
+    res.status(200).send(bill);
+});
+
+module.exports.vipBill = catchAsync(async function (req, res, next) {
+    const body = _.pick(req.body, ['type', 'products', 'discountPercent', 'customer', 'vipBalancePercent']);
+    body.customer = await mongoose.model('VipCustomer').findById(body.customer, 'name phone balance');
+    const productIds = body.products.map((product) => product.product);
+    const products = await mongoose
+        .model('Product')
+        .find(
+            {
+                _id: {
+                    $in: productIds,
+                },
+            },
+            { _id: 1, name: 1, salePrice: 1, costPrice: 1 }
+        )
+        .lean();
+
+    body.products.forEach((bodyProduct) => {
+        bodyProduct.product = products.find((product) => product._id.toString() === bodyProduct.product.toString());
+    });
+
+    let subTotal = 0;
+    body.products.forEach((product) => {
+        const amount = product.product.salePrice * product.qty;
+        product.amount = amount;
+        subTotal += amount;
+    });
+    const discountAmount = Number(subTotal * body.discountPercent * 0.01);
+    const total = Number(subTotal - discountAmount);
+    const vipNeeded = Number(body.vipBalancePercent * 0.01 * total);
+    const vipConsumed = vipNeeded <= body.customer.balance ? vipNeeded : body.customer.balance;
+    const remainingPay = total - vipConsumed;
+    body.customer.balance -= vipConsumed;
+    await mongoose.model('VipCustomer').findByIdAndUpdate(body.customer._id, { balance: body.customer.balance });
+
+    const bill = await Model.create({
+        ...body,
+        total,
+        subTotal,
+        discountAmount,
+        vipConsumed,
+        remainingPay,
+        createdShop: res.locals.shop._id,
+    });
+    res.status(200).send(bill);
+});
+
+module.exports.refundBill = catchAsync(async function (req, res, next) {
+    const body = _.pick(req.body, ['type', 'products']);
+    const bill = await mongoose.model('Bill').findById(req.params.id).lean();
+    const discountPercent = bill.subTotal / bill.discountAmount;
+    body.products.forEach((bodyProduct) => {
+        console.log(bodyProduct.product);
+        // bill.products.map((billProduct) => {
+        //     if (billProduct._id === bodyProduct.product) {
+        //     }
+        // });
+    });
+    // res.status(200).send(discountPercent);
+    // const productIds = body.products.map((product) => product.product);
+    // const products = await mongoose
+    //     .model('Product')
+    //     .find(
+    //         {
+    //             _id: {
+    //                 $in: productIds,
+    //             },
+    //         },
+    //         { _id: 1, name: 1, salePrice: 1, costPrice: 1 }
+    //     )
+    //     .lean();
+
+    // body.products.forEach((bodyProduct) => {
+    //     bodyProduct.product = products.find((product) => product._id.toString() === bodyProduct.product.toString());
+    // });
+
+    // let subTotal = 0;
+    // body.products.forEach((product) => {
+    //     const amount = product.product.salePrice * product.qty;
+    //     product.amount = amount;
+    //     subTotal += amount;
+    // });
+    // const discountAmount = Number(subTotal * body.discountPercent * 0.01);
+    // const total = Number(subTotal - discountAmount);
+    // const vipNeeded = Number(body.vipBalancePercent * 0.01 * total);
+    // const vipConsumed = vipNeeded <= body.customer.balance ? vipNeeded : body.customer.balance;
+    // const remainingPay = total - vipConsumed;
+    // body.customer.balance -= vipConsumed;
+    // await mongoose.model('VipCustomer').findByIdAndUpdate(body.customer._id, { balance: body.customer.balance });
+
+    // await Model.create({
+    //     ...body,
+    //     total,
+    //     subTotal,
+    //     discountAmount,
+    //     vipConsumed,
+    //     remainingPay,
+    //     createdShop: res.locals.shop._id,
+    // });
+    // res.status(200).send();
 });
 
 module.exports.edit = catchAsync(async function (req, res, next) {
@@ -198,7 +288,10 @@ module.exports.addMany = catchAsync(async function (req, res, next) {
     if (!areValidUnits) return next(new AppError('Please enter units that are suitable for the product', 400));
 
     docs.forEach((d) => {
-        d.units = units.map((u) => ({ ..._.omit(u, ['type', 'createdAt']), unitExists: true }));
+        d.units = units.map((u) => ({
+            ..._.omit(u, ['type', 'createdAt']),
+            unitExists: true,
+        }));
         d.isRemaining = d.paid !== d.sourcePrice;
         const product = products.find((p) => p._id.toString() === d.product.toString());
         d.product = { ...product, productExists: true };
