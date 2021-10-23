@@ -17,26 +17,48 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
     //     { projection: { __v: 0 }, lean: true, page, limit }
     // );
 
-    const docs = await Model.aggregate([
-        {
-            $match: {
-                $or: [{ item: { $regex: `${search}`, $options: 'i' } }],
+    const docs = await Model.aggregatePaginate(
+        Model.aggregate([
+            {
+                $match: {
+                    item: { $regex: `${search}`, $options: 'i' },
+                },
             },
-        },
-        { $group: { _id: '$item', quantity: { $sum: '$quantity' } } },
+            { $group: { _id: '$item', quantity: { $sum: '$quantity' } } },
+            {
+                $project: { item: '$_id', quantity: '$quantity', _id: 0 },
+            },
+        ]),
         {
-            $project: { item: '$_id', quantity: '$quantity', _id: 0 },
-        },
-    ]);
-    res.status(200).send(docs);
+            lean: true,
+            page,
+            limit,
+        }
+    );
+
+    // const docs = await Model.aggregate([
+    //     {
+    //         $match: {
+    //             $or: [{ item: { $regex: `${search}`, $options: 'i' } }],
+    //         },
+    //     },
+    //     { $group: { _id: '$item', quantity: { $sum: '$quantity' } } },
+    //     {
+    //         $project: { item: '$_id', quantity: '$quantity', _id: 0 },
+    //     },
+    // ]);
+    res.status(200).json(
+        _.pick(docs, ['docs', 'totalDocs', 'hasPrevPage', 'hasNextPage', 'totalPages', 'pagingCounter'])
+    );
 });
 
 module.exports.getTransactions = catchAsync(async function (req, res, next) {
-    const { page, limit, search } = req.query;
+    const { page, limit, search, startDate, endDate } = req.query;
 
     const results = await Model.paginate(
         {
             $and: [
+                { createdAt: { $gte: startDate, $lte: `${endDate}T24:00:00.000Z` } },
                 {
                     $or: [
                         { item: { $regex: `${search}`, $options: 'i' } },

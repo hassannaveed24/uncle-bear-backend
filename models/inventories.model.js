@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const mongoosePagiante = require('mongoose-paginate-v2');
+const mongooseAggregatePaginate = require('mongoose-aggregate-paginate-v2');
 
 const schema = new mongoose.Schema({
     item: {
@@ -21,6 +22,7 @@ const schema = new mongoose.Schema({
 });
 
 schema.plugin(mongoosePagiante);
+schema.plugin(mongooseAggregatePaginate);
 
 const Model = mongoose.model('Inventory', schema);
 
