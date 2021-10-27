@@ -13,6 +13,7 @@ const schema = new mongoose.Schema({
             {
                 product: {
                     _id: { type: mongoose.Schema.ObjectId, required: [true] },
+                    registeredGroupId: { type: Object },
                     name: {
                         type: String,
                         required: [true, 'Please enter product name'],

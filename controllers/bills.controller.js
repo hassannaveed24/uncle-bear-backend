@@ -81,6 +81,7 @@ module.exports.addOne = catchAsync(async function (req, res, next) {
             },
             { _id: 1, name: 1, salePrice: 1, costPrice: 1 }
         )
+        .populate({ path: 'registeredGroupId', select: 'name' })
         .lean();
 
     body.products.forEach((bodyProduct) => {
@@ -120,6 +121,7 @@ module.exports.vipBill = catchAsync(async function (req, res, next) {
             },
             { _id: 1, name: 1, salePrice: 1, costPrice: 1 }
         )
+        .populate({ path: 'registeredGroupId', select: 'name' })
         .lean();
 
     body.products.forEach((bodyProduct) => {
