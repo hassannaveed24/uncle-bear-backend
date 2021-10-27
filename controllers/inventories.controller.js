@@ -57,15 +57,11 @@ module.exports.getTransactions = catchAsync(async function (req, res, next) {
 
     const results = await Model.paginate(
         {
-            $and: [
-                { createdAt: { $gte: startDate, $lte: `${endDate}T24:00:00.000Z` } },
-                {
-                    $or: [
-                        { item: { $regex: `${search}`, $options: 'i' } },
-                        { description: { $regex: `${search}`, $options: 'i' } },
-                    ],
-                },
-                { createdShop: res.locals.shop._id },
+            createdAt: { $gte: startDate, $lte: endDate },
+            createdShop: res.locals.shop._id,
+            $or: [
+                { item: { $regex: `${search}`, $options: 'i' } },
+                { description: { $regex: `${search}`, $options: 'i' } },
             ],
         },
         { projection: { __v: 0 }, populate: { path: 'createdShop', select: '_id address' }, lean: true, page, limit }

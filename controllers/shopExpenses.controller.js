@@ -5,18 +5,15 @@ const { catchAsync } = require('./errors.controller');
 const AppError = require('../utils/AppError');
 
 module.exports.getAll = catchAsync(async function (req, res, next) {
-    const { page, limit, sort, search } = req.query;
+    const { page, limit, sort, search, startDate, endDate } = req.query;
 
     const results = await Model.paginate(
         {
-            $and: [
-                {
-                    $or: [
-                        { expenseName: { $regex: `${search}`, $options: 'i' } },
-                        { detail: { $regex: `${search}`, $options: 'i' } },
-                    ],
-                },
-                { createdShop: res.locals.shop._id },
+            createdAt: { $gte: startDate, $lte: endDate },
+            createdShop: res.locals.shop._id,
+            $or: [
+                { expenseName: { $regex: `${search}`, $options: 'i' } },
+                { detail: { $regex: `${search}`, $options: 'i' } },
             ],
         },
         {

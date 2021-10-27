@@ -6,22 +6,37 @@ const { catchAsync } = require('./errors.controller');
 const AppError = require('../utils/AppError');
 
 module.exports.getSalariesbyEmployeee = catchAsync(async function (req, res, next) {
-    const { employeeId } = req.query;
+    const { employeeId, page, limit, sort, search, startDate, endDate } = req.query;
 
-    const result = await Model.find({ employeeId: ObjectId(employeeId) }, { __v: 0, employeeId: 0 }).populate(
-        'createdShop',
-        { _id: 1, address: 1 }
+    const result = await Model.paginate(
+        {
+            employeeId: ObjectId(employeeId),
+            createdAt: { $gte: startDate, $lte: endDate },
+            createdShop: res.locals.shop._id,
+            description: { $regex: `${search}`, $options: 'i' },
+        },
+        {
+            projection: { __v: 0, employeeId: 0 },
+            populate: [{ path: 'createdShop', select: '_id address' }],
+            lean: true,
+            page,
+            limit,
+            sort,
+        }
     );
 
     res.status(200).send(result);
 });
 
 module.exports.getAll = catchAsync(async function (req, res, next) {
-    const { page, limit, sort, search } = req.query;
+    const { page, limit, sort, search, startDate, endDate } = req.query;
 
     const results = await Model.paginate(
-        { createdShop: res.locals.shop._id },
-
+        {
+            createdAt: { $gte: startDate, $lte: endDate },
+            createdShop: res.locals.shop._id,
+            description: { $regex: `${search}`, $options: 'i' },
+        },
         {
             projection: { __v: 0 },
             populate: [

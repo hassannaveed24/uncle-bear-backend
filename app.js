@@ -21,8 +21,8 @@ const typesRoute = require('./routes/types.route');
 const unitsRoute = require('./routes/units.route');
 const inventoriesRoute = require('./routes/inventories.route');
 const billsRoute = require('./routes/bills.route');
+const salesReportRoute = require('./routes/salesReport.route');
 const salesRoute = require('./routes/sales.route');
-const expensesRoute = require('./routes/expenses.route');
 
 const authRoute = require('./routes/auth.route');
 const { errorController } = require('./controllers/errors.controller');
@@ -62,11 +62,12 @@ app.listen(port, () => {
     app.use('/employees', employeesRoute);
     app.use('/inventories', inventoriesRoute);
     app.use('/bills', billsRoute);
+    app.use('sales-report', salesReportRoute);
     // app.use('/suppliers', suppliersRoute);
     // app.use('/types', typesRoute);
     // app.use('/units', unitsRoute);
     // // app.use('/sales', salesRoute);
-    // app.use('/expenses', expensesRoute);
+
     // // app.use('/categories', protect, categoriesRoute);
     // app.use('/auth', authRoute);
 
