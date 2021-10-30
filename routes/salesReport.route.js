@@ -4,6 +4,6 @@ const autoParams = require('../utils/autoParams');
 const { getAll } = require('../controllers/salesReport.controller');
 const { restrictToShop } = require('../middlewares/createdShop.middleware');
 
-router.get('/', restrictToShop, getAll);
+router.get('/', autoParams, restrictToShop, getAll);
 
 module.exports = router;

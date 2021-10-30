@@ -62,7 +62,7 @@ app.listen(port, () => {
     app.use('/employees', employeesRoute);
     app.use('/inventories', inventoriesRoute);
     app.use('/bills', billsRoute);
-    app.use('sales-report', salesReportRoute);
+    app.use('/sales-report', salesReportRoute);
     // app.use('/suppliers', suppliersRoute);
     // app.use('/types', typesRoute);
     // app.use('/units', unitsRoute);
