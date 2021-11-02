@@ -13,7 +13,7 @@ const {
 const { restrictToShop } = require('../middlewares/createdShop.middleware');
 
 router.get('/', getAll);
-router.get('/transactions', autoParams, restrictToShop, getTransactions);
+router.get('/transactions/:type', autoParams, restrictToShop, getTransactions);
 router.post('/', restrictToShop, addOne);
 router.patch('/id/:id', restrictToShop, edit);
 router.route('/id/:id').delete(remove);

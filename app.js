@@ -63,13 +63,13 @@ app.listen(port, () => {
     app.use('/inventories', inventoriesRoute);
     app.use('/bills', billsRoute);
     app.use('/sales-report', salesReportRoute);
+    app.use('/auth', authRoute);
     // app.use('/suppliers', suppliersRoute);
     // app.use('/types', typesRoute);
     // app.use('/units', unitsRoute);
     // // app.use('/sales', salesRoute);
 
     // // app.use('/categories', protect, categoriesRoute);
-    // app.use('/auth', authRoute);
 
     app.use('*', (req, res, next) => next(new AppError(`Cannot find ${req.originalUrl} on the server!`, 404)));
 

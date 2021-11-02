@@ -54,17 +54,20 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
 
 module.exports.getTransactions = catchAsync(async function (req, res, next) {
     const { page, limit, search, startDate, endDate } = req.query;
+    const { type } = req.params;
+    const quantityQuery = type === 'add' ? { $gt: 0 } : { $lte: 0 };
 
     const results = await Model.paginate(
         {
             createdAt: { $gte: startDate, $lte: endDate },
             createdShop: res.locals.shop._id,
+            quantity: quantityQuery,
             $or: [
                 { item: { $regex: `${search}`, $options: 'i' } },
                 { description: { $regex: `${search}`, $options: 'i' } },
             ],
         },
-        { projection: { __v: 0 }, populate: { path: 'createdShop', select: '_id address' }, lean: true, page, limit }
+        { projection: { __v: 0, createdShop: 0 }, lean: true, page, limit }
     );
 
     res.status(200).json(
