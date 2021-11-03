@@ -1,6 +1,9 @@
 const mongoose = require('mongoose');
 const { Parser } = require('json2csv');
 const dayjs = require('dayjs');
+const localizedFormat = require('dayjs/plugin/localizedFormat');
+
+dayjs.extend(localizedFormat);
 const _ = require('lodash');
 const Model = require('../models/rawMaterialExpenses.model');
 const { catchAsync } = require('./errors.controller');
@@ -52,9 +55,15 @@ module.exports.getAllCSV = catchAsync(async function (req, res, next) {
             sort,
         }
     );
-
-    const json2csv = new Parser({ fields: ['product_bought', 'price', 'detail', 'qty', 'createdAt'] });
-    const csv = json2csv.parse(results.docs);
+    const docs = results.docs.map((e) => ({
+        Item: e.product_bought,
+        Price: e.price,
+        Detail: e.detail,
+        Quantity: e.qty,
+        Date: dayjs(e.createdAt).format('lll'),
+    }));
+    const json2csv = new Parser({ fields: ['Item', 'Price', 'Detail', 'Quantity', 'Date'] });
+    const csv = json2csv.parse(docs);
     res.attachment(
         `Raw Material Expenses ${dayjs(startDate).format('DD-MM-YYYY')} -- ${dayjs(endDate).format('DD-MM-YYYY')}.csv`
     );

@@ -1,6 +1,9 @@
 const mongoose = require('mongoose');
 const { Parser } = require('json2csv');
 const dayjs = require('dayjs');
+const localizedFormat = require('dayjs/plugin/localizedFormat');
+
+dayjs.extend(localizedFormat);
 const _ = require('lodash');
 const Model = require('../models/vipCustomers.model');
 const { catchAsync } = require('./errors.controller');
@@ -63,9 +66,14 @@ module.exports.getAllCSV = catchAsync(async function (req, res, next) {
             sort,
         }
     );
-
-    const json2csv = new Parser({ fields: ['name', 'phone', 'balance', 'createdAt'] });
-    const csv = json2csv.parse(results.docs);
+    const docs = results.docs.map((e) => ({
+        Name: e.name,
+        'Phone No': e.phone,
+        'VIP Balance': e.balance,
+        Date: dayjs(e.createdAt).format('lll'),
+    }));
+    const json2csv = new Parser({ fields: ['Name', 'Phone No', 'VIP Balance', 'Date'] });
+    const csv = json2csv.parse(docs);
     res.attachment(`VIP Customers ${dayjs().format('DD-MM-YYYY')}.csv`);
     res.status(200).send(csv);
 });

@@ -1,6 +1,9 @@
 const mongoose = require('mongoose');
 const { Parser } = require('json2csv');
 const dayjs = require('dayjs');
+const localizedFormat = require('dayjs/plugin/localizedFormat');
+
+dayjs.extend(localizedFormat);
 const _ = require('lodash');
 const Model = require('../models/normalCustomers.model');
 const { catchAsync } = require('./errors.controller');
@@ -56,16 +59,20 @@ module.exports.getAllCSV = catchAsync(async function (req, res, next) {
         },
         {
             projection: { __v: 0 },
-            populate: { path: 'createdShop', select: '_id address' },
             lean: true,
             page,
             limit,
             sort,
         }
     );
+    const docs = results.docs.map((e) => ({
+        Name: e.name,
+        Phone: e.phone,
+        Date: dayjs(e.createdAt).format('lll'),
+    }));
 
-    const json2csv = new Parser({ fields: ['name', 'phone', 'createdAt'] });
-    const csv = json2csv.parse(results.docs);
+    const json2csv = new Parser({ fields: ['Name', 'Phone', 'Date'] });
+    const csv = json2csv.parse(docs);
     res.attachment(`Normal Customers ${dayjs().format('DD-MM-YYYY')}.csv`);
     res.status(200).send(csv);
 });
