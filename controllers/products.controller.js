@@ -34,9 +34,6 @@ module.exports.getbyGroups = catchAsync(async function (req, res, next) {
     const [results, productGroups] = await Promise.all([
         Model.aggregate([
             {
-                $sort: { 'product._id': 1 },
-            },
-            {
                 $group: {
                     _id: '$registeredGroupId',
 
@@ -56,6 +53,9 @@ module.exports.getbyGroups = catchAsync(async function (req, res, next) {
                     _id: 0,
                     products: '$products',
                 },
+            },
+            {
+                $sort: { group: 1 },
             },
         ]),
         mongoose.model('ProductGroup').find().lean(),
