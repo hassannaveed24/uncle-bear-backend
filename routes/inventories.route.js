@@ -9,11 +9,15 @@ const {
     pay,
     addMany,
     getTransactions,
+    getInventoryCSV,
+    getTransactionsCSV,
 } = require('../controllers/inventories.controller');
 const { restrictToShop } = require('../middlewares/createdShop.middleware');
 
 router.get('/', getAll);
+router.get('/inventory/get-csv', getInventoryCSV);
 router.get('/transactions/:type', autoParams, restrictToShop, getTransactions);
+router.get('/transactions/:type/get-csv', autoParams, restrictToShop, getTransactionsCSV);
 router.post('/', restrictToShop, addOne);
 router.patch('/id/:id', restrictToShop, edit);
 router.route('/id/:id').delete(remove);

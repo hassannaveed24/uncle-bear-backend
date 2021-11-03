@@ -1,4 +1,8 @@
 const mongoose = require('mongoose');
+const fs = require('fs');
+const path = require('path');
+const { Parser } = require('json2csv');
+const dayjs = require('dayjs');
 const _ = require('lodash');
 const Model = require('../models/inventories.model');
 const Product = require('../models/products.model');
@@ -9,13 +13,6 @@ const AppError = require('../utils/AppError');
 
 module.exports.getAll = catchAsync(async function (req, res, next) {
     const { page, limit, search } = req.query;
-
-    // const results = await Model.paginate(
-    //     {
-    //         $or: [{ item: { $regex: `${search}`, $options: 'i' } }],
-    //     },
-    //     { projection: { __v: 0 }, lean: true, page, limit }
-    // );
 
     const docs = await Model.aggregatePaginate(
         Model.aggregate([
@@ -36,20 +33,37 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
         }
     );
 
-    // const docs = await Model.aggregate([
-    //     {
-    //         $match: {
-    //             $or: [{ item: { $regex: `${search}`, $options: 'i' } }],
-    //         },
-    //     },
-    //     { $group: { _id: '$item', quantity: { $sum: '$quantity' } } },
-    //     {
-    //         $project: { item: '$_id', quantity: '$quantity', _id: 0 },
-    //     },
-    // ]);
     res.status(200).json(
         _.pick(docs, ['docs', 'totalDocs', 'hasPrevPage', 'hasNextPage', 'totalPages', 'pagingCounter'])
     );
+});
+
+module.exports.getInventoryCSV = catchAsync(async function (req, res, next) {
+    const { page, limit, search } = req.query;
+
+    const docs = await Model.aggregatePaginate(
+        Model.aggregate([
+            {
+                $match: {
+                    item: { $regex: `${search}`, $options: 'i' },
+                },
+            },
+            { $group: { _id: '$item', quantity: { $sum: '$quantity' } } },
+            {
+                $project: { item: '$_id', quantity: '$quantity', _id: 0 },
+            },
+        ]),
+        {
+            lean: true,
+            page,
+            limit,
+        }
+    );
+    const json2csv = new Parser({ fields: ['item', 'quantity'] });
+    const csv = json2csv.parse(docs.docs);
+    const date = dayjs().format('DD-MM-YYYY');
+    res.attachment(`Inventory ${date}.csv`);
+    res.status(200).send(csv);
 });
 
 module.exports.getTransactions = catchAsync(async function (req, res, next) {
@@ -73,6 +87,32 @@ module.exports.getTransactions = catchAsync(async function (req, res, next) {
     res.status(200).json(
         _.pick(results, ['docs', 'totalDocs', 'hasPrevPage', 'hasNextPage', 'totalPages', 'pagingCounter'])
     );
+});
+
+module.exports.getTransactionsCSV = catchAsync(async function (req, res, next) {
+    const { page, limit, search, startDate, endDate } = req.query;
+    const { type } = req.params;
+    const quantityQuery = type === 'add' ? { $gt: 0 } : { $lte: 0 };
+
+    const results = await Model.paginate(
+        {
+            createdAt: { $gte: startDate, $lte: endDate },
+            createdShop: res.locals.shop._id,
+            quantity: quantityQuery,
+            $or: [
+                { item: { $regex: `${search}`, $options: 'i' } },
+                { description: { $regex: `${search}`, $options: 'i' } },
+            ],
+        },
+        { projection: { __v: 0, createdShop: 0 }, lean: true, page, limit }
+    );
+
+    const json2csv = new Parser({ fields: ['item', 'createdAt', 'quantity', 'description'] });
+    const csv = json2csv.parse(results.docs);
+    res.attachment(
+        `Inventory Transactions ${dayjs(startDate).format('DD-MM-YYYY')} -- ${dayjs(endDate).format('DD-MM-YYYY')}.csv`
+    );
+    res.status(200).send(csv);
 });
 
 module.exports.addOne = catchAsync(async function (req, res, next) {
