@@ -32,7 +32,7 @@ const schema = new mongoose.Schema({
     passwordChangedAt: Date,
     role: {
         type: String,
-        enum: { values: ['CASHIER', 'MANAGER', 'ADMINISTRATOR'], message: 'Invalid role' },
+        enum: { values: ['MANAGER', 'ADMINISTRATOR'], message: 'Invalid role' },
     },
     isConfirmed: {
         type: Boolean,
@@ -41,6 +41,10 @@ const schema = new mongoose.Schema({
     },
     // products: { type: [Product.schema], required: true, default: [] },
     createdAt: { type: Date, required: true, default: Date.now() },
+    createdShop: {
+        type: mongoose.Types.ObjectId,
+        ref: 'Shop',
+    },
 });
 schema.plugin(mongoosePagiante);
 schema.plugin(uniqueValidator, { message: 'User with the {PATH} of {VALUE} already exists' });

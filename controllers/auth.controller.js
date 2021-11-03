@@ -100,9 +100,9 @@ module.exports.confirmUser = catchAsync(async function (req, res, next) {
 
     if (!user) return next(new AppError('User does not exist', 404));
 
-    await user.updateOne({ isConfirmed: true, role: role.toUpperCase() });
+    await user.updateOne({ isConfirmed: true, role: role.toUpperCase(), createdShop: res.locals.shop._id });
 
-    res.status(200).json(_.pick(user, ['_id', 'name', 'role', 'createdAt']));
+    res.status(200).send();
 });
 
 module.exports.editUser = catchAsync(async function (req, res, next) {

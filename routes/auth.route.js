@@ -10,10 +10,12 @@ const {
     decodeToken,
     remove,
 } = require('../controllers/auth.controller');
+const { restrictToShop } = require('../middlewares/createdShop.middleware');
+const autoParams = require('../utils/autoParams');
 
-router.route('/').get(getUsers);
+router.get('/', autoParams, getUsers);
 router.get('/decode/:token', decodeToken);
-router.route('/confirm/:id/:role').put(confirmUser);
+router.put('/confirm/:id/:role', restrictToShop, confirmUser);
 // router.put('/:id', protect, editUser);
 router.route('/register').post(registerUser);
 router.route('/login').post(loginUser);
