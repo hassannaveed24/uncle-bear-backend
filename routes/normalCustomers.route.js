@@ -1,9 +1,10 @@
 const router = require('express').Router();
 
-const { getAll, addOne, addMany, edit, remove } = require('../controllers/normalCustomers.controller');
+const { getAll, getAllCSV, addOne, addMany, edit, remove } = require('../controllers/normalCustomers.controller');
 const { restrictToShop } = require('../middlewares/createdShop.middleware');
 
 router.get('/', restrictToShop, getAll);
+router.get('/get-csv', restrictToShop, getAllCSV);
 router.post('/', restrictToShop, addOne);
 router.patch('/id/:id', restrictToShop, edit);
 router.route('/id/:id').delete(remove);

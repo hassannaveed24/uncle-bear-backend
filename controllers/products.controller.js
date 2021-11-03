@@ -31,10 +31,11 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
 });
 
 module.exports.getbyGroups = catchAsync(async function (req, res, next) {
-    const { page, limit, sort, search } = req.query;
-
     const [results, productGroups] = await Promise.all([
         Model.aggregate([
+            {
+                $sort: { 'product._id': 1 },
+            },
             {
                 $group: {
                     _id: '$registeredGroupId',

@@ -1,4 +1,10 @@
+/* eslint-disable prefer-const */
 const mongoose = require('mongoose');
+const { Parser } = require('json2csv');
+const dayjs = require('dayjs');
+const localizedFormat = require('dayjs/plugin/localizedFormat');
+
+dayjs.extend(localizedFormat);
 const _ = require('lodash');
 const { ObjectId } = require('mongoose').Types;
 const Model = require('../models/salariesExpenses.model');
@@ -16,8 +22,7 @@ module.exports.getSalariesbyEmployeee = catchAsync(async function (req, res, nex
             description: { $regex: `${search}`, $options: 'i' },
         },
         {
-            projection: { __v: 0, employeeId: 0 },
-            populate: [{ path: 'createdShop', select: '_id address' }],
+            projection: { __v: 0, employeeId: 0, createdShop: 0 },
             lean: true,
             page,
             limit,
@@ -26,6 +31,34 @@ module.exports.getSalariesbyEmployeee = catchAsync(async function (req, res, nex
     );
 
     res.status(200).send(result);
+});
+module.exports.getSalariesbyEmployeeeCSV = catchAsync(async function (req, res, next) {
+    const { employeeId, page, limit, sort, search, startDate, endDate } = req.query;
+
+    const result = await Model.paginate(
+        {
+            employeeId: ObjectId(employeeId),
+            createdAt: { $gte: startDate, $lte: endDate },
+            createdShop: res.locals.shop._id,
+            description: { $regex: `${search}`, $options: 'i' },
+        },
+        {
+            projection: { __v: 0, employeeId: 0, createdShop: 0 },
+            lean: true,
+            page,
+            limit,
+            sort,
+        }
+    );
+    const { name } = await mongoose.model('Employee').findOne({ _id: employeeId }, 'name');
+    const json2csv = new Parser({ fields: ['amount', 'description', 'createdAt'] });
+    const csv = json2csv.parse(result.docs);
+    res.attachment(
+        `Salaries Expenses- ${name} - ${dayjs(startDate).format('DD-MM-YYYY')} -- ${dayjs(endDate).format(
+            'DD-MM-YYYY'
+        )}.csv`
+    );
+    res.status(200).send(csv);
 });
 
 module.exports.getAll = catchAsync(async function (req, res, next) {
@@ -53,6 +86,37 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
     res.status(200).json(
         _.pick(results, ['docs', 'totalDocs', 'hasPrevPage', 'hasNextPage', 'totalPages', 'pagingCounter'])
     );
+});
+module.exports.getAllCSV = catchAsync(async function (req, res, next) {
+    const { page, limit, sort, search, startDate, endDate } = req.query;
+
+    const results = await Model.paginate(
+        {
+            createdAt: { $gte: startDate, $lte: endDate },
+            createdShop: res.locals.shop._id,
+            description: { $regex: `${search}`, $options: 'i' },
+        },
+        {
+            projection: { __v: 0, createdShop: 0 },
+            populate: [{ path: 'employeeId', select: 'name' }],
+            lean: true,
+            page,
+            limit,
+            sort,
+        }
+    );
+    const docs = results.docs.map((e) => ({
+        Date: dayjs(e.createdAt).format('lll'),
+        Description: e.description,
+        Amount: e.amount,
+        Employee: e.employeeId.name,
+    }));
+    const json2csv = new Parser({ fields: ['Employee', 'Amount', 'Description', 'Date'] });
+    const csv = json2csv.parse(docs);
+    res.attachment(
+        `Salaries Expenses ${dayjs(startDate).format('DD-MM-YYYY')} -- ${dayjs(endDate).format('DD-MM-YYYY')}.csv`
+    );
+    res.status(200).send(csv);
 });
 
 // module.exports.addMany = catchAsync(async function (req, res, next) {

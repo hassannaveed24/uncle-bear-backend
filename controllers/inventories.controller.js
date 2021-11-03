@@ -1,6 +1,4 @@
 const mongoose = require('mongoose');
-const fs = require('fs');
-const path = require('path');
 const { Parser } = require('json2csv');
 const dayjs = require('dayjs');
 const _ = require('lodash');

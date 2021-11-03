@@ -1,4 +1,6 @@
 const mongoose = require('mongoose');
+const { Parser } = require('json2csv');
+const dayjs = require('dayjs');
 const _ = require('lodash');
 const Model = require('../models/normalCustomers.model');
 const { catchAsync } = require('./errors.controller');
@@ -34,6 +36,38 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
     res.status(200).json(
         _.pick(results, ['docs', 'totalDocs', 'hasPrevPage', 'hasNextPage', 'totalPages', 'pagingCounter'])
     );
+});
+module.exports.getAllCSV = catchAsync(async function (req, res, next) {
+    const { page, limit, sort, search } = req.query;
+
+    const results = await Model.paginate(
+        {
+            $and: [
+                {
+                    $or: [
+                        { name: { $regex: `${search}`, $options: 'i' } },
+                        { phone: { $regex: `${search}`, $options: 'i' } },
+                    ],
+                },
+                {
+                    createdShop: res.locals.shop._id,
+                },
+            ],
+        },
+        {
+            projection: { __v: 0 },
+            populate: { path: 'createdShop', select: '_id address' },
+            lean: true,
+            page,
+            limit,
+            sort,
+        }
+    );
+
+    const json2csv = new Parser({ fields: ['name', 'phone', 'createdAt'] });
+    const csv = json2csv.parse(results.docs);
+    res.attachment(`Normal Customers ${dayjs().format('DD-MM-YYYY')}.csv`);
+    res.status(200).send(csv);
 });
 
 module.exports.addMany = catchAsync(async function (req, res, next) {
