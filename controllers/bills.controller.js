@@ -6,6 +6,7 @@ const Unit = require('../models/units.model');
 const Supplier = require('../models/suppliers.model');
 const { catchAsync } = require('./errors.controller');
 const AppError = require('../utils/AppError');
+const RefundBill = require('../models/refundBills.model');
 
 module.exports.getAll = catchAsync(async function (req, res, next) {
     const { page, limit, search } = req.query;
@@ -155,57 +156,101 @@ module.exports.vipBill = catchAsync(async function (req, res, next) {
 });
 
 module.exports.refundBill = catchAsync(async function (req, res, next) {
-    const body = _.pick(req.body, ['type', 'products']);
-    const bill = await mongoose.model('Bill').findById(req.params.id).lean();
-    const discountPercent = bill.subTotal / bill.discountAmount;
-    body.products.forEach((bodyProduct) => {
-        console.log(bodyProduct.product);
-        // bill.products.map((billProduct) => {
-        //     if (billProduct._id === bodyProduct.product) {
-        //     }
-        // });
+
+    // RECEIVE BILL ID FROM PARAMS
+    const { id: billId } = req.params;
+
+    if (!mongoose.isValidObjectId(billId)) return next(new AppError('Please enter a valid bill id', 400));
+
+
+    // SAMPLE PAYLOAD
+    // [
+    //     {
+    //         product: 'abc',
+    //         qty: 2
+    //     },
+    //     {
+    //         product: 'abc',
+    //         qty: 2
+    //     },
+    // ]
+
+    const body = [];
+
+    for (const b of req.body) {
+        const filteredB = _.pick(b, ['product', 'qty']);
+        if (!filteredB.hasOwnProperty('product') || !filteredB.hasOwnProperty('qty')) {
+            return next(new AppError('Invalid payload structure', 400));
+        }
+
+        body.push(filteredB);
+    }
+
+    // FETCH BILL AND VALIDATE
+    const originalBill = await Model.findById(billId).lean();
+
+    if (!originalBill)
+        return next(new AppError('Bill does not exist', 400));
+
+    // POPULATE ALL PRODUCT IDS COMING FROM PAYLOAD
+    const productIds = body.map((b) => b.product); // ['abc', 'abc']
+    const uniqueProductIds = [...new Set(productIds)]; // ['abc']
+
+    if (uniqueProductIds.length < productIds.length)
+        return next(new AppError('Duplicate products not allowed', 400));
+
+    const products = originalBill.products.filter((p) => uniqueProductIds.includes(p.product._id.toString())).map((p) => ({ ...p.product, qty: p.qty, amount: p.amount }));
+
+    if (products.length < uniqueProductIds)
+        return next(new AppError('Product(s) does not exist in the original bill', 404));
+
+    body.forEach((b) => {
+        const populatedProduct = products.find((p) => p._id.toString() === b.product);
+        b.product = populatedProduct;
     });
-    // res.status(200).send(discountPercent);
-    // const productIds = body.products.map((product) => product.product);
-    // const products = await mongoose
-    //     .model('Product')
-    //     .find(
-    //         {
-    //             _id: {
-    //                 $in: productIds,
-    //             },
-    //         },
-    //         { _id: 1, name: 1, salePrice: 1, costPrice: 1 }
-    //     )
-    //     .lean();
 
-    // body.products.forEach((bodyProduct) => {
-    //     bodyProduct.product = products.find((product) => product._id.toString() === bodyProduct.product.toString());
-    // });
 
-    // let subTotal = 0;
-    // body.products.forEach((product) => {
-    //     const amount = product.product.salePrice * product.qty;
-    //     product.amount = amount;
-    //     subTotal += amount;
-    // });
-    // const discountAmount = Number(subTotal * body.discountPercent * 0.01);
-    // const total = Number(subTotal - discountAmount);
-    // const vipNeeded = Number(body.vipBalancePercent * 0.01 * total);
-    // const vipConsumed = vipNeeded <= body.customer.balance ? vipNeeded : body.customer.balance;
-    // const remainingPay = total - vipConsumed;
-    // body.customer.balance -= vipConsumed;
-    // await mongoose.model('VipCustomer').findByIdAndUpdate(body.customer._id, { balance: body.customer.balance });
+    // CREATE A REFUND BILL
 
-    // await Model.create({
-    //     ...body,
-    //     total,
-    //     subTotal,
-    //     discountAmount,
-    //     vipConsumed,
-    //     remainingPay,
-    //     createdShop: res.locals.shop._id,
-    // });
+    const refundBill = {
+        originalBill: originalBill._id,
+        products: [],
+        total: 0,
+        createdShop: res.locals.shop._id,
+        customer: originalBill.customer,
+        discountPercent: originalBill.discountPercent
+    };
+
+    // CHECK THE QUANTITY OF CORRESPONDING PRODUCTS
+
+    for (const p of body) {
+        if (p.qty > p.product.qty)
+            return next(new AppError('Not enough product quantity(s) in the original bill', 400));
+
+        const product = { ..._.omit(p.product, ['qty', 'amount']), qty: p.qty };
+
+        const absoluteAmount = product.salePrice * p.qty;
+        const discountedAmount = absoluteAmount - (absoluteAmount * (refundBill.discountPercent / 100));
+
+        product.amount = discountedAmount;
+
+        refundBill.products.push(product);
+    }
+
+    // CALCULATE TOTAL
+
+    const totals = [0, 0];
+
+    refundBill.products.forEach((p) => totals.push(p.amount));
+
+    refundBill.total = totals.reduce((a, b) => a + b);
+
+    const createdBill = await RefundBill.create(refundBill);
+
+    res.status(200).send(createdBill);
+
+
+
     // res.status(200).send();
 });
 
