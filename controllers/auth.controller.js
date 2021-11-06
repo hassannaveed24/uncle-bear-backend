@@ -25,13 +25,9 @@ module.exports.registerUser = catchAsync(async function (req, res, next) {
 
     if (!Object.keys(newUser).length) return next(new AppError('Please enter a valid user', 400));
 
-    const createdUser = await User.create(newUser);
+    await User.create(newUser);
 
-    const token = signToken(createdUser._id);
-
-    const filteredUser = _.pick(createdUser, ['_id', 'name', 'role']);
-
-    res.status(200).json({ ...filteredUser, token });
+    res.status(200).json();
 });
 
 module.exports.loginUser = catchAsync(async function (req, res, next) {
@@ -51,7 +47,7 @@ module.exports.loginUser = catchAsync(async function (req, res, next) {
 
     const token = signToken(user._id);
 
-    res.status(200).json({ token, name: user.name, role: user.role });
+    res.status(200).json({ token, name: user.name, role: user.role, shop: user.createdShop, _id: user._id });
 });
 
 module.exports.protect = catchAsync(async function (req, res, next) {
