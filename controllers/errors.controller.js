@@ -39,7 +39,7 @@ module.exports.errorController = function (err, req, res, next) {
 
     let error = { ...err, name: err.name, stack: err.stack, message: err.message };
 
-    // console.log(error);
+    console.log(error);
 
     if (error.name === 'CastError') error = getCastError(error);
     if (error.name === 'ValidationError') error = getValidationError(error);

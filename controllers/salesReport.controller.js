@@ -32,8 +32,8 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
             ]),
         ]);
 
-        rawMaterialExpenses = rawMaterialExpenses[0].price;
-        shopExpenses = shopExpenses[0].price;
+        rawMaterialExpenses = rawMaterialExpenses[0]?.price;
+        shopExpenses = shopExpenses[0]?.price;
         salariesExpenses = salariesExpenses[0].price;
         const totalExpenses = rawMaterialExpenses + shopExpenses + salariesExpenses;
         return { rawMaterialExpenses, shopExpenses, salariesExpenses, totalExpenses };
@@ -51,7 +51,9 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
                 dbOriginalProducts.push(
                     bill.products.map((p) => {
                         const amount = p.amount - p.amount * (bill.discountPercent / 100);
-                        return { ...p, amount };
+                        const costPricePerUnit = p.costPrice;
+                        const costPrice = costPricePerUnit * p.qty;
+                        return { ...p, amount, costPrice, costPricePerUnit };
                     })
                 );
             });
@@ -67,8 +69,7 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
                     const existingProduct = groupedOriginalProducts[productIndex];
                     existingProduct.qty += originalProduct.qty;
                     existingProduct.amount += originalProduct.amount;
-                    existingProduct.costPrice += originalProduct.costPrice * originalProduct.qty;
-                    console.log(productIndex, groupedOriginalProducts[productIndex].costPrice);
+                    existingProduct.costPrice += originalProduct.costPricePerUnit * originalProduct.qty;
                 } else {
                     groupedOriginalProducts.push(originalProduct);
                 }
@@ -85,10 +86,12 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
 
             refundBills.forEach((refundBill) => {
                 dbRefundProducts.push(
-                    refundBill.products.map((p) =>
-                        // const amount = p.amount - (p.amount * (refundBill.discountPercent / 100));
-                        ({ ...p, amount: p.amount })
-                    )
+                    refundBill.products.map((p) => {
+                        // const amount = p.amount - p.amount * (refundBill.discountPercent / 100);
+                        const costPricePerUnit = p.costPrice;
+                        const costPrice = costPricePerUnit * p.qty;
+                        return { ...p, costPricePerUnit, costPrice };
+                    })
                 );
             });
 
@@ -104,7 +107,7 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
                     const existingProduct = groupedRefundProducts[productIndex];
                     existingProduct.qty += refundProduct.qty;
                     existingProduct.amount += refundProduct.amount;
-                    existingProduct.costPrice += refundProduct.costPrice;
+                    existingProduct.costPrice += refundProduct.costPricePerUnit * refundProduct.costPrice;
                 } else {
                     groupedRefundProducts.push(refundProduct);
                 }
