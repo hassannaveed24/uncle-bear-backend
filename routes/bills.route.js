@@ -16,7 +16,7 @@ const {
 const { restrictToShop } = require('../middlewares/createdShop.middleware');
 
 router.get('/', autoParams, getAll);
-router.get('/:id', autoParams, getOne);
+router.get('/id/:id', autoParams, getOne);
 router.get('/transactions', autoParams, getTransactions);
 router.post('/', restrictToShop, addOne);
 router.post('/vip', restrictToShop, vipBill);

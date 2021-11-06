@@ -37,18 +37,20 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
         salariesExpenses = salariesExpenses[0].price;
         const totalExpenses = rawMaterialExpenses + shopExpenses + salariesExpenses;
         return { rawMaterialExpenses, shopExpenses, salariesExpenses, totalExpenses };
-    }
+    };
 
     const getProducts = async () => {
-
         const getOriginalProducts = async () => {
-            const bills = await mongoose.model('Bill').find({ createdAt: { $gte: startDate, $lte: endDate } }).lean();
+            const bills = await mongoose
+                .model('Bill')
+                .find({ createdAt: { $gte: startDate, $lte: endDate } })
+                .lean();
             let dbOriginalProducts = [];
 
             bills.forEach((bill) => {
                 dbOriginalProducts.push(
                     bill.products.map((p) => {
-                        const amount = p.amount - (p.amount * (bill.discountPercent / 100));
+                        const amount = p.amount - p.amount * (bill.discountPercent / 100);
                         return { ...p.product, qty: p.qty, amount };
                     })
                 );
@@ -59,8 +61,9 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
             const groupedOriginalProducts = [];
 
             for (const originalProduct of dbOriginalProducts) {
-
-                const productIndex = groupedOriginalProducts.findIndex((p) => p._id.toString() === originalProduct._id.toString());
+                const productIndex = groupedOriginalProducts.findIndex(
+                    (p) => p._id.toString() === originalProduct._id.toString()
+                );
 
                 if (productIndex !== -1) {
                     const existingProduct = groupedOriginalProducts[productIndex];
@@ -69,22 +72,24 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
                 } else {
                     groupedOriginalProducts.push(originalProduct);
                 }
-
             }
 
             return groupedOriginalProducts;
-        }
+        };
 
         const getRefundProducts = async () => {
-            const refundBills = await mongoose.model('RefundBill').find({ createdAt: { $gte: startDate, $lte: endDate } }).lean();
+            const refundBills = await mongoose
+                .model('RefundBill')
+                .find({ createdAt: { $gte: startDate, $lte: endDate } })
+                .lean();
             let dbRefundProducts = [];
 
             refundBills.forEach((refundBill) => {
                 dbRefundProducts.push(
-                    refundBill.products.map((p) => {
+                    refundBill.products.map((p) =>
                         // const amount = p.amount - (p.amount * (refundBill.discountPercent / 100));
-                        return { ...p, amount: p.amount };
-                    })
+                        ({ ...p, amount: p.amount })
+                    )
                 );
             });
 
@@ -93,8 +98,9 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
             const groupedRefundProducts = [];
 
             for (const refundProduct of dbRefundProducts) {
-
-                const productIndex = groupedRefundProducts.findIndex((p) => p._id.toString() === refundProduct._id.toString());
+                const productIndex = groupedRefundProducts.findIndex(
+                    (p) => p._id.toString() === refundProduct._id.toString()
+                );
 
                 if (productIndex !== -1) {
                     const existingProduct = groupedRefundProducts[productIndex];
@@ -103,19 +109,18 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
                 } else {
                     groupedRefundProducts.push(refundProduct);
                 }
-
             }
 
             return groupedRefundProducts;
-        }
+        };
 
         const deductRefunds = (o, refunds) => {
             const originals = [...o];
 
             refunds.forEach((refundProduct) => {
-
-                const originalProductIndex = originals.findIndex((o) => o._id.toString() === refundProduct._id.toString());
-
+                const originalProductIndex = originals.findIndex(
+                    (e) => e._id.toString() === refundProduct._id.toString()
+                );
 
                 if (originalProductIndex > -1) {
                     console.log(originals[originalProductIndex]);
@@ -125,14 +130,14 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
             });
 
             return originals;
-        }
+        };
 
         const [originalProducts, refundProducts] = await Promise.all([getOriginalProducts(), getRefundProducts()]);
 
         const deductedProducts = deductRefunds(originalProducts, refundProducts);
 
         return deductedProducts;
-    }
+    };
 
     const [expenses, products] = await Promise.all([getExpenses(), getProducts()]);
 

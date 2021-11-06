@@ -47,6 +47,7 @@ const schema = new mongoose.Schema({
         ref: 'Shop',
         required: [true, 'Please enter shop'],
     },
+    billId: String,
 });
 
 schema.plugin(mongoosePagiante);

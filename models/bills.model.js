@@ -47,28 +47,19 @@ const schema = new mongoose.Schema({
             type: Number,
         },
     },
-    subTotal: {
-        type: Number,
-    },
-    discountPercent: {
-        type: Number,
-    },
-    discountAmount: {
-        type: Number,
-    },
-    total: {
-        type: Number,
-    },
-    vipConsumed: {
-        type: Number,
-    },
-    remainingPay: { type: Number },
+    subTotal: Number,
+    discountPercent: Number,
+    discountAmount: Number,
+    total: Number,
+    vipConsumed: Number,
+    remainingPay: Number,
     createdAt: { type: Date, required: true, default: Date.now() },
     createdShop: {
         type: mongoose.Types.ObjectId,
         ref: 'Shop',
         required: [true, 'Please enter shop'],
     },
+    billId: String,
 });
 
 schema.plugin(mongoosePagiante);

@@ -1,3 +1,4 @@
+/* eslint-disable no-prototype-builtins */
 const mongoose = require('mongoose');
 const _ = require('lodash');
 const Model = require('../models/bills.model');
@@ -7,35 +8,32 @@ const Supplier = require('../models/suppliers.model');
 const { catchAsync } = require('./errors.controller');
 const AppError = require('../utils/AppError');
 const RefundBill = require('../models/refundBills.model');
+const generateBillId = require('../utils/generateBillId');
 
 module.exports.getAll = catchAsync(async function (req, res, next) {
-    const { page, limit, search } = req.query;
+    const { page, limit, startDate, endDate } = req.query;
 
-    // const results = await Model.paginate(
-    //     {
-    //         $or: [{ item: { $regex: `${search}`, $options: 'i' } }],
-    //     },
-    //     { projection: { __v: 0 }, lean: true, page, limit }
-    // );
+    const bills = await mongoose.model('Bill').paginate(
+        { createdAt: { $gte: startDate, $lte: endDate } },
+        {
+            projection: { __v: 0 },
+            lean: true,
+            populate: { path: 'createdShop', select: '_id address' },
+            page,
+            limit,
+            sort: { _id: -1 },
+        }
+    );
 
-    const docs = await Model.aggregate([
-        {
-            $match: {
-                $or: [{ item: { $regex: `${search}`, $options: 'i' } }],
-            },
-        },
-        { $group: { _id: '$item', quantity: { $sum: '$quantity' } } },
-        {
-            $project: { item: '$_id', quantity: '$quantity', _id: 0 },
-        },
-    ]);
-    res.status(200).send(docs);
+    console.log(bills);
+
+    res.status(200).send(bills);
 });
 
 module.exports.getOne = catchAsync(async function (req, res, next) {
     const { id } = req.params;
-
-    const bill = await Model.find({ _id: id });
+    if (!id || id === 'null' || id === 'undefined') return next(new AppError('Please enter a bill id', 400));
+    const bill = await Model.findOne({ billId: id });
     res.status(200).send(bill);
 });
 
@@ -105,7 +103,10 @@ module.exports.addOne = catchAsync(async function (req, res, next) {
         discountAmount,
         createdShop: res.locals.shop._id,
     });
-    res.status(200).send(bill);
+    const generatedBillId = bill._id.toString();
+    const billId = generateBillId(generatedBillId);
+    await Model.findByIdAndUpdate(generatedBillId, { billId });
+    res.status(200).send({ ...bill, billId });
 });
 
 module.exports.vipBill = catchAsync(async function (req, res, next) {
@@ -152,16 +153,17 @@ module.exports.vipBill = catchAsync(async function (req, res, next) {
         remainingPay,
         createdShop: res.locals.shop._id,
     });
-    res.status(200).send(bill);
+    const generatedBillId = bill._id.toString();
+    const billId = generateBillId(generatedBillId);
+    await Model.findByIdAndUpdate(generatedBillId, { billId });
+    res.status(200).send({ ...bill, billId });
 });
 
 module.exports.refundBill = catchAsync(async function (req, res, next) {
-
     // RECEIVE BILL ID FROM PARAMS
     const { id: billId } = req.params;
 
     if (!mongoose.isValidObjectId(billId)) return next(new AppError('Please enter a valid bill id', 400));
-
 
     // SAMPLE PAYLOAD
     // [
@@ -189,17 +191,17 @@ module.exports.refundBill = catchAsync(async function (req, res, next) {
     // FETCH BILL AND VALIDATE
     const originalBill = await Model.findById(billId).lean();
 
-    if (!originalBill)
-        return next(new AppError('Bill does not exist', 400));
+    if (!originalBill) return next(new AppError('Bill does not exist', 400));
 
     // POPULATE ALL PRODUCT IDS COMING FROM PAYLOAD
     const productIds = body.map((b) => b.product); // ['abc', 'abc']
     const uniqueProductIds = [...new Set(productIds)]; // ['abc']
 
-    if (uniqueProductIds.length < productIds.length)
-        return next(new AppError('Duplicate products not allowed', 400));
+    if (uniqueProductIds.length < productIds.length) return next(new AppError('Duplicate products not allowed', 400));
 
-    const products = originalBill.products.filter((p) => uniqueProductIds.includes(p.product._id.toString())).map((p) => ({ ...p.product, qty: p.qty, amount: p.amount }));
+    const products = originalBill.products
+        .filter((p) => uniqueProductIds.includes(p.product._id.toString()))
+        .map((p) => ({ ...p.product, qty: p.qty, amount: p.amount }));
 
     if (products.length < uniqueProductIds)
         return next(new AppError('Product(s) does not exist in the original bill', 404));
@@ -209,7 +211,6 @@ module.exports.refundBill = catchAsync(async function (req, res, next) {
         b.product = populatedProduct;
     });
 
-
     // CREATE A REFUND BILL
 
     const refundBill = {
@@ -218,7 +219,7 @@ module.exports.refundBill = catchAsync(async function (req, res, next) {
         total: 0,
         createdShop: res.locals.shop._id,
         customer: originalBill.customer,
-        discountPercent: originalBill.discountPercent
+        discountPercent: originalBill.discountPercent,
     };
 
     // CHECK THE QUANTITY OF CORRESPONDING PRODUCTS
@@ -230,7 +231,7 @@ module.exports.refundBill = catchAsync(async function (req, res, next) {
         const product = { ..._.omit(p.product, ['qty', 'amount']), qty: p.qty };
 
         const absoluteAmount = product.salePrice * p.qty;
-        const discountedAmount = absoluteAmount - (absoluteAmount * (refundBill.discountPercent / 100));
+        const discountedAmount = absoluteAmount - absoluteAmount * (refundBill.discountPercent / 100);
 
         product.amount = discountedAmount;
 
@@ -247,9 +248,10 @@ module.exports.refundBill = catchAsync(async function (req, res, next) {
 
     const createdBill = await RefundBill.create(refundBill);
 
-    res.status(200).send(createdBill);
-
-
+    const generatedBillId = createdBill._id.toString();
+    const createdBillId = generateBillId(generatedBillId);
+    await Model.findByIdAndUpdate(generatedBillId, { billId: createdBillId });
+    res.status(200).send({ ...createdBill, billId: createdBillId });
 
     // res.status(200).send();
 });
