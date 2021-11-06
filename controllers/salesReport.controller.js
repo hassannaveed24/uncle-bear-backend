@@ -51,7 +51,7 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
                 dbOriginalProducts.push(
                     bill.products.map((p) => {
                         const amount = p.amount - p.amount * (bill.discountPercent / 100);
-                        return { ...p.product, qty: p.qty, amount };
+                        return { ...p, amount };
                     })
                 );
             });
@@ -59,21 +59,20 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
             dbOriginalProducts = _.flattenDeep(dbOriginalProducts);
 
             const groupedOriginalProducts = [];
-
             for (const originalProduct of dbOriginalProducts) {
                 const productIndex = groupedOriginalProducts.findIndex(
                     (p) => p._id.toString() === originalProduct._id.toString()
                 );
-
                 if (productIndex !== -1) {
                     const existingProduct = groupedOriginalProducts[productIndex];
                     existingProduct.qty += originalProduct.qty;
                     existingProduct.amount += originalProduct.amount;
+                    existingProduct.costPrice += originalProduct.costPrice * originalProduct.qty;
+                    console.log(productIndex, groupedOriginalProducts[productIndex].costPrice);
                 } else {
                     groupedOriginalProducts.push(originalProduct);
                 }
             }
-
             return groupedOriginalProducts;
         };
 
@@ -94,7 +93,6 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
             });
 
             dbRefundProducts = _.flattenDeep(dbRefundProducts);
-
             const groupedRefundProducts = [];
 
             for (const refundProduct of dbRefundProducts) {
@@ -106,6 +104,7 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
                     const existingProduct = groupedRefundProducts[productIndex];
                     existingProduct.qty += refundProduct.qty;
                     existingProduct.amount += refundProduct.amount;
+                    existingProduct.costPrice += refundProduct.costPrice;
                 } else {
                     groupedRefundProducts.push(refundProduct);
                 }
@@ -123,9 +122,10 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
                 );
 
                 if (originalProductIndex > -1) {
-                    console.log(originals[originalProductIndex]);
+                    // console.log(originals[originalProductIndex]);
                     originals[originalProductIndex].qty -= refundProduct.qty;
                     originals[originalProductIndex].amount -= refundProduct.amount;
+                    originals[originalProductIndex].costPrice -= refundProduct.costPrice;
                 }
             });
 
