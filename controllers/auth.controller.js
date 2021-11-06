@@ -35,7 +35,7 @@ module.exports.loginUser = catchAsync(async function (req, res, next) {
 
     if (Object.keys(body).length < 2) return next(new AppError('Please enter email and password', 400));
 
-    const user = await User.findOne({ name: body.name });
+    const user = await User.findOne({ name: body.name }).populate('createdShop');
 
     if (!user) return next(new AppError('Invalid username or password', 401));
 
@@ -47,7 +47,13 @@ module.exports.loginUser = catchAsync(async function (req, res, next) {
 
     const token = signToken(user._id);
 
-    res.status(200).json({ token, name: user.name, role: user.role, shop: user.createdShop, _id: user._id });
+    res.status(200).json({
+        token,
+        name: user.name,
+        role: user.role,
+        shop: user.createdShop,
+        _id: user._id,
+    });
 });
 
 module.exports.protect = catchAsync(async function (req, res, next) {
@@ -141,7 +147,9 @@ module.exports.decodeToken = catchAsync(async function (req, res, next) {
     const { token } = req.params;
     console.log(token);
     const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id, { __v: 0, password: 0 }).lean();
+    const user = await User.findById(decoded.id, { __v: 0, password: 0 }).populate('createdShop').lean();
+    user.shop = user.createdShop;
+    delete user.createdShop;
     res.status(200).json(user);
 });
 
