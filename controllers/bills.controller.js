@@ -84,7 +84,11 @@ module.exports.addOne = catchAsync(async function (req, res, next) {
         .lean();
 
     body.products.forEach((bodyProduct) => {
-        bodyProduct.product = products.find((product) => product._id.toString() === bodyProduct.product.toString());
+        // eslint-disable-next-line no-param-reassign
+        bodyProduct = {
+            ...bodyProduct,
+            ...products.find((product) => product._id.toString() === bodyProduct.product.toString()),
+        };
     });
 
     let subTotal = 0;
@@ -95,6 +99,14 @@ module.exports.addOne = catchAsync(async function (req, res, next) {
     });
     const discountAmount = Number(subTotal * body.discountPercent * 0.01);
     const total = Number(subTotal - discountAmount);
+
+    console.log({
+        ...body,
+        total,
+        subTotal,
+        discountAmount,
+        createdShop: res.locals.shop._id,
+    });
 
     const bill = await Model.create({
         ...body,
@@ -127,7 +139,11 @@ module.exports.vipBill = catchAsync(async function (req, res, next) {
         .lean();
 
     body.products.forEach((bodyProduct) => {
-        bodyProduct.product = products.find((product) => product._id.toString() === bodyProduct.product.toString());
+        // eslint-disable-next-line no-param-reassign
+        bodyProduct = {
+            ...bodyProduct,
+            ...products.find((product) => product._id.toString() === bodyProduct.product.toString()),
+        };
     });
 
     let subTotal = 0;
