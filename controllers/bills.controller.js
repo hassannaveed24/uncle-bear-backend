@@ -89,7 +89,7 @@ module.exports.addOne = catchAsync(async function (req, res, next) {
 
     let subTotal = 0;
     body.products.forEach((product) => {
-        const amount = product.product.salePrice * product.qty;
+        const amount = product.salePrice * product.qty;
         product.amount = amount;
         subTotal += amount;
     });
@@ -132,7 +132,7 @@ module.exports.vipBill = catchAsync(async function (req, res, next) {
 
     let subTotal = 0;
     body.products.forEach((product) => {
-        const amount = product.product.salePrice * product.qty;
+        const amount = product.salePrice * product.qty;
         product.amount = amount;
         subTotal += amount;
     });
@@ -200,7 +200,7 @@ module.exports.refundBill = catchAsync(async function (req, res, next) {
     if (uniqueProductIds.length < productIds.length) return next(new AppError('Duplicate products not allowed', 400));
 
     const products = originalBill.products
-        .filter((p) => uniqueProductIds.includes(p.product._id.toString()))
+        .filter((p) => uniqueProductIds.includes(p._id.toString()))
         .map((p) => ({ ...p.product, qty: p.qty, amount: p.amount }));
 
     if (products.length < uniqueProductIds)
