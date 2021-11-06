@@ -100,14 +100,6 @@ module.exports.addOne = catchAsync(async function (req, res, next) {
     const discountAmount = Number(subTotal * body.discountPercent * 0.01);
     const total = Number(subTotal - discountAmount);
 
-    console.log({
-        ...body,
-        total,
-        subTotal,
-        discountAmount,
-        createdShop: res.locals.shop._id,
-    });
-
     const bill = await Model.create({
         ...body,
         total,

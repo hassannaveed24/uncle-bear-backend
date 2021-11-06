@@ -51,7 +51,7 @@ module.exports.loginUser = catchAsync(async function (req, res, next) {
 
     const token = signToken(user._id);
 
-    res.status(200).json(token);
+    res.status(200).json({ token, name: user.name, role: user.role });
 });
 
 module.exports.protect = catchAsync(async function (req, res, next) {
@@ -143,6 +143,7 @@ module.exports.authorizeUser = catchAsync(async function (req, res, next) {
 
 module.exports.decodeToken = catchAsync(async function (req, res, next) {
     const { token } = req.params;
+    console.log(token);
     const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.id, { __v: 0, password: 0 }).lean();
     res.status(200).json(user);
