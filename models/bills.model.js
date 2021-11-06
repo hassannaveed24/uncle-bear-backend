@@ -11,22 +11,20 @@ const schema = new mongoose.Schema({
     products: {
         type: [
             {
-                product: {
-                    _id: { type: mongoose.Schema.ObjectId, required: [true] },
-                    registeredGroupId: { type: Object },
-                    name: {
-                        type: String,
-                        required: [true, 'Please enter product name'],
-                        maxlength: [255, 'Only 255 characters are allowed in title'],
-                    },
-                    salePrice: {
-                        type: Number,
-                        required: [true, 'Please enter sale price'],
-                    },
-                    costPrice: {
-                        type: Number,
-                        required: [true, 'Please enter cost price'],
-                    },
+                _id: { type: mongoose.Schema.ObjectId, required: [true] },
+                registeredGroupId: { type: Object },
+                name: {
+                    type: String,
+                    required: [true, 'Please enter product name'],
+                    maxlength: [255, 'Only 255 characters are allowed in title'],
+                },
+                salePrice: {
+                    type: Number,
+                    required: [true, 'Please enter sale price'],
+                },
+                costPrice: {
+                    type: Number,
+                    required: [true, 'Please enter cost price'],
                 },
                 amount: { type: Number, required: [true, 'Amount is required'] },
                 qty: { type: Number, required: [true, 'Please enter quantity'] },
