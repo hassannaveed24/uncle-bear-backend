@@ -26,8 +26,6 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
         }
     );
 
-    console.log(bills);
-
     res.status(200).send(bills);
 });
 
@@ -202,11 +200,10 @@ module.exports.refundBill = catchAsync(async function (req, res, next) {
     const uniqueProductIds = [...new Set(productIds)]; // ['abc']
 
     if (uniqueProductIds.length < productIds.length) return next(new AppError('Duplicate products not allowed', 400));
-    console.log('before');
+
     const { products } = originalBill;
     // .filter((p) => uniqueProductIds.includes(p._id.toString()))
     // .map((p) => ({ ...p.product, qty: p.qty, amount: p.amount }));
-    console.log({ products: originalBill.products });
 
     if (products.length < uniqueProductIds)
         return next(new AppError('Product(s) does not exist in the original bill', 404));

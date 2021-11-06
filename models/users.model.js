@@ -19,6 +19,7 @@ const schema = new mongoose.Schema({
         required: [true, 'Please enter a password'],
     },
     passwordConfirm: {
+        select: false,
         type: String,
         required: [true, 'Please confirm your password'],
         validate: {
