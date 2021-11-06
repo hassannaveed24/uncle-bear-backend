@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 /* eslint-disable no-prototype-builtins */
 const mongoose = require('mongoose');
 const _ = require('lodash');
@@ -24,8 +25,6 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
             sort: { _id: -1 },
         }
     );
-
-    console.log(bills);
 
     res.status(200).send(bills);
 });
@@ -83,13 +82,10 @@ module.exports.addOne = catchAsync(async function (req, res, next) {
         .populate({ path: 'registeredGroupId', select: 'name' })
         .lean();
 
-    body.products.forEach((bodyProduct) => {
-        // eslint-disable-next-line no-param-reassign
-        bodyProduct = {
-            ...bodyProduct,
-            ...products.find((product) => product._id.toString() === bodyProduct.product.toString()),
-        };
-    });
+    body.products = body.products.map((bodyProduct) => ({
+        ...products.find((product) => product._id.toString() === bodyProduct.product.toString()),
+        qty: bodyProduct.qty,
+    }));
 
     let subTotal = 0;
     body.products.forEach((product) => {
@@ -110,7 +106,7 @@ module.exports.addOne = catchAsync(async function (req, res, next) {
     const generatedBillId = bill._id.toString();
     const billId = generateBillId(generatedBillId);
     await Model.findByIdAndUpdate(generatedBillId, { billId });
-    res.status(200).send({ ...bill, billId });
+    res.status(200).send({ ...bill._doc, billId });
 });
 
 module.exports.vipBill = catchAsync(async function (req, res, next) {
@@ -130,13 +126,10 @@ module.exports.vipBill = catchAsync(async function (req, res, next) {
         .populate({ path: 'registeredGroupId', select: 'name' })
         .lean();
 
-    body.products.forEach((bodyProduct) => {
-        // eslint-disable-next-line no-param-reassign
-        bodyProduct = {
-            ...bodyProduct,
-            ...products.find((product) => product._id.toString() === bodyProduct.product.toString()),
-        };
-    });
+    body.products = body.products.map((bodyProduct) => ({
+        ...products.find((product) => product._id.toString() === bodyProduct.product.toString()),
+        qty: bodyProduct.qty,
+    }));
 
     let subTotal = 0;
     body.products.forEach((product) => {
@@ -146,6 +139,7 @@ module.exports.vipBill = catchAsync(async function (req, res, next) {
     });
     const discountAmount = Number(subTotal * body.discountPercent * 0.01);
     const total = Number(subTotal - discountAmount);
+
     const vipNeeded = Number(body.vipBalancePercent * 0.01 * total);
     const vipConsumed = vipNeeded <= body.customer.balance ? vipNeeded : body.customer.balance;
     const remainingPay = total - vipConsumed;
@@ -164,7 +158,7 @@ module.exports.vipBill = catchAsync(async function (req, res, next) {
     const generatedBillId = bill._id.toString();
     const billId = generateBillId(generatedBillId);
     await Model.findByIdAndUpdate(generatedBillId, { billId });
-    res.status(200).send({ ...bill, billId });
+    res.status(200).send({ ...bill._doc, billId });
 });
 
 module.exports.refundBill = catchAsync(async function (req, res, next) {
@@ -207,9 +201,9 @@ module.exports.refundBill = catchAsync(async function (req, res, next) {
 
     if (uniqueProductIds.length < productIds.length) return next(new AppError('Duplicate products not allowed', 400));
 
-    const products = originalBill.products
-        .filter((p) => uniqueProductIds.includes(p._id.toString()))
-        .map((p) => ({ ...p.product, qty: p.qty, amount: p.amount }));
+    const { products } = originalBill;
+    // .filter((p) => uniqueProductIds.includes(p._id.toString()))
+    // .map((p) => ({ ...p.product, qty: p.qty, amount: p.amount }));
 
     if (products.length < uniqueProductIds)
         return next(new AppError('Product(s) does not exist in the original bill', 404));
@@ -259,7 +253,7 @@ module.exports.refundBill = catchAsync(async function (req, res, next) {
     const generatedBillId = createdBill._id.toString();
     const createdBillId = generateBillId(generatedBillId);
     await Model.findByIdAndUpdate(generatedBillId, { billId: createdBillId });
-    res.status(200).send({ ...createdBill, billId: createdBillId });
+    res.status(200).send({ ...createdBill._doc, billId: createdBillId });
 
     // res.status(200).send();
 });
