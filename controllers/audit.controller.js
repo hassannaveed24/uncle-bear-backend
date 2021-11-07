@@ -164,10 +164,11 @@ module.exports.getProfitLossReport = catchAsync(async function (req, res, next) 
     const {
         startDate,
         endDate,
-        companyProfitVal1Percentage,
-        companyFutureCostVal1Percentage,
-        companyProfitVal2Percentage,
-        companyFutureCostVal2Percentage,
+        profit1 = 60,
+        futureCost1 = 60,
+        profit2 = 60,
+        futureCost2 = 60,
+        expense2 = 60,
     } = req.query;
     const [products, expenses] = await Promise.all([getProducts(startDate, endDate), getExpenses(startDate, endDate)]);
     const [prices] = await Promise.all([getPrices(products)]);
@@ -180,9 +181,10 @@ module.exports.getProfitLossReport = catchAsync(async function (req, res, next) 
         totalCostPrice: prices.totalCostPrice,
         totalEarningVal1: earningValues.totalEarningVal1,
         totalEarningVal2: earningValues.totalEarningVal2,
-        companyProfitVal1: earningValues.totalEarningVal1 * (companyProfitVal1Percentage || 0) * 0.01,
-        companyFutureCostVal1: earningValues.totalEarningVal1 * (companyFutureCostVal1Percentage || 0) * 0.01,
-        companyProfitVal2: earningValues.totalEarningVal2 * (companyProfitVal2Percentage || 0) * 0.01,
-        companyFutureCostVal2: earningValues.totalEarningVal2 * (companyFutureCostVal2Percentage || 0) * 0.01,
+        companyProfitVal1: earningValues.totalEarningVal1 * profit1 * 0.01,
+        companyFutureCostVal1: earningValues.totalEarningVal1 * futureCost1 * 0.01,
+        companyProfitVal2: earningValues.totalEarningVal2 * profit2 * 0.01,
+        companyFutureCostVal2: earningValues.totalEarningVal2 * futureCost2 * 0.01,
+        companyExpenseVal2: earningValues.totalEarningVal2 * expense2 * 0.01,
     });
 });
