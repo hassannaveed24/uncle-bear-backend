@@ -7,7 +7,7 @@ const Supplier = require('../models/suppliers.model');
 const { catchAsync } = require('./errors.controller');
 const AppError = require('../utils/AppError');
 
-module.exports.getAll = catchAsync(async function (req, res, next) {
+module.exports.getSalesReport = catchAsync(async function (req, res, next) {
     const { startDate, endDate } = req.query;
 
     const getExpenses = async () => {

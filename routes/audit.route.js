@@ -1,9 +1,9 @@
 const router = require('express').Router();
 
 const autoParams = require('../utils/autoParams');
-const { getAll } = require('../controllers/salesReport.controller');
+const { getSalesReport } = require('../controllers/audit.controller');
 const { restrictToShop } = require('../middlewares/createdShop.middleware');
 
-router.get('/', autoParams, restrictToShop, getAll);
+router.get('/sales-report', autoParams, restrictToShop, getSalesReport);
 
 module.exports = router;

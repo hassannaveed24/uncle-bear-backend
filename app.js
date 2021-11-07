@@ -21,7 +21,7 @@ const typesRoute = require('./routes/types.route');
 const unitsRoute = require('./routes/units.route');
 const inventoriesRoute = require('./routes/inventories.route');
 const billsRoute = require('./routes/bills.route');
-const salesReportRoute = require('./routes/salesReport.route');
+const auditRoute = require('./routes/audit.route');
 const salesRoute = require('./routes/sales.route');
 
 const authRoute = require('./routes/auth.route');
@@ -62,7 +62,7 @@ app.listen(port, () => {
     app.use('/employees', employeesRoute);
     app.use('/inventories', inventoriesRoute);
     app.use('/bills', billsRoute);
-    app.use('/sales-report', salesReportRoute);
+    app.use('/audit', auditRoute);
     app.use('/auth', authRoute);
     // app.use('/suppliers', suppliersRoute);
     // app.use('/types', typesRoute);
