@@ -7,46 +7,57 @@ const Supplier = require('../models/suppliers.model');
 const { catchAsync } = require('./errors.controller');
 const AppError = require('../utils/AppError');
 
-module.exports.getSalesReport = catchAsync(async function (req, res, next) {
-    const { startDate, endDate } = req.query;
+const getPrices = async (distinctProducts) => {
+    let totalSellPrice = 0;
+    let totalCostPrice = 0;
+    distinctProducts.forEach((p) => {
+        totalSellPrice += p.amount;
+        totalCostPrice += p.costPrice;
+    });
+    return { totalSellPrice, totalCostPrice };
+};
+const getExpenses = async (startDate, endDate) => {
+    let [rawMaterialExpenses, shopExpenses, salariesExpenses, bills, refundBills] = await Promise.all([
+        await mongoose.model('RawMaterialExpenses').aggregate([
+            {
+                $match: { createdAt: { $gte: startDate, $lte: endDate } },
+            },
+            { $group: { _id: null, price: { $sum: '$price' } } },
+        ]),
+        await mongoose.model('ShopExpenses').aggregate([
+            {
+                $match: { createdAt: { $gte: startDate, $lte: endDate } },
+            },
+            { $group: { _id: null, price: { $sum: '$price' } } },
+        ]),
+        await mongoose.model('SalariesExpense').aggregate([
+            {
+                $match: { createdAt: { $gte: startDate, $lte: endDate } },
+            },
+            { $group: { _id: null, price: { $sum: '$amount' } } },
+        ]),
+    ]);
 
-    const getExpenses = async () => {
-        let [rawMaterialExpenses, shopExpenses, salariesExpenses, bills, refundBills] = await Promise.all([
-            await mongoose.model('RawMaterialExpenses').aggregate([
-                {
-                    $match: { createdAt: { $gte: startDate, $lte: endDate } },
-                },
-                { $group: { _id: null, price: { $sum: '$price' } } },
-            ]),
-            await mongoose.model('ShopExpenses').aggregate([
-                {
-                    $match: { createdAt: { $gte: startDate, $lte: endDate } },
-                },
-                { $group: { _id: null, price: { $sum: '$price' } } },
-            ]),
-            await mongoose.model('SalariesExpense').aggregate([
-                {
-                    $match: { createdAt: { $gte: startDate, $lte: endDate } },
-                },
-                { $group: { _id: null, price: { $sum: '$amount' } } },
-            ]),
-        ]);
+    rawMaterialExpenses = rawMaterialExpenses[0]?.price || 0;
+    shopExpenses = shopExpenses[0]?.price || 0;
+    salariesExpenses = salariesExpenses[0]?.price || 0;
+    const totalExpenses = rawMaterialExpenses + shopExpenses + salariesExpenses;
+    return { rawMaterialExpenses, shopExpenses, salariesExpenses, totalExpenses };
+};
 
-        rawMaterialExpenses = rawMaterialExpenses[0]?.price;
-        shopExpenses = shopExpenses[0]?.price;
-        salariesExpenses = salariesExpenses[0].price;
-        const totalExpenses = rawMaterialExpenses + shopExpenses + salariesExpenses;
-        return { rawMaterialExpenses, shopExpenses, salariesExpenses, totalExpenses };
-    };
+const getEarningValues = async (totalSalePrice, totalExpenses, totalCostPrice) => ({
+    totalEarningVal1: totalSalePrice - totalExpenses,
+    totalEarningVal2: totalSalePrice - totalCostPrice,
+});
 
-    const getProducts = async () => {
-        const getOriginalProducts = async () => {
-            const bills = await mongoose
-                .model('Bill')
-                .find({ createdAt: { $gte: startDate, $lte: endDate } })
-                .lean();
-            let dbOriginalProducts = [];
-
+const getProducts = async (startDate, endDate) => {
+    const getOriginalProducts = async () => {
+        const bills = await mongoose
+            .model('Bill')
+            .find({ createdAt: { $gte: startDate, $lte: endDate } })
+            .lean();
+        let dbOriginalProducts = [];
+        if (bills) {
             bills.forEach((bill) => {
                 dbOriginalProducts.push(
                     bill.products.map((p) => {
@@ -75,13 +86,16 @@ module.exports.getSalesReport = catchAsync(async function (req, res, next) {
                 }
             }
             return groupedOriginalProducts;
-        };
+        }
+        return [];
+    };
 
-        const getRefundProducts = async () => {
-            const refundBills = await mongoose
-                .model('RefundBill')
-                .find({ createdAt: { $gte: startDate, $lte: endDate } })
-                .lean();
+    const getRefundProducts = async () => {
+        const refundBills = await mongoose
+            .model('RefundBill')
+            .find({ createdAt: { $gte: startDate, $lte: endDate } })
+            .lean();
+        if (refundBills) {
             let dbRefundProducts = [];
 
             refundBills.forEach((refundBill) => {
@@ -112,50 +126,63 @@ module.exports.getSalesReport = catchAsync(async function (req, res, next) {
                 }
             }
             return groupedRefundProducts;
-        };
-
-        const deductRefunds = (o, refunds) => {
-            const originals = [...o];
-
-            refunds.forEach((refundProduct) => {
-                const originalProductIndex = originals.findIndex(
-                    (e) => e._id.toString() === refundProduct._id.toString()
-                );
-
-                if (originalProductIndex > -1) {
-                    originals[originalProductIndex].qty -= refundProduct.qty;
-                    originals[originalProductIndex].amount -= refundProduct.amount;
-                    originals[originalProductIndex].costPrice -= refundProduct.costPrice;
-                }
-            });
-
-            return originals;
-        };
-
-        const [originalProducts, refundProducts] = await Promise.all([getOriginalProducts(), getRefundProducts()]);
-
-        const deductedProducts = deductRefunds(originalProducts, refundProducts);
-
-        return deductedProducts;
+        }
+        return [];
     };
 
-    const getPrices = async (distinctProducts) => {
-        let totalSellPrice = 0;
-        let totalCostPrice = 0;
-        distinctProducts.forEach((p) => {
-            totalSellPrice += p.amount;
-            totalCostPrice += p.costPrice;
+    const deductRefunds = (o, refunds) => {
+        const originals = [...o];
+
+        refunds.forEach((refundProduct) => {
+            const originalProductIndex = originals.findIndex((e) => e._id.toString() === refundProduct._id.toString());
+
+            if (originalProductIndex > -1) {
+                originals[originalProductIndex].qty -= refundProduct.qty;
+                originals[originalProductIndex].amount -= refundProduct.amount;
+                originals[originalProductIndex].costPrice -= refundProduct.costPrice;
+            }
         });
-        return { totalSellPrice, totalCostPrice };
+
+        return originals;
     };
 
-    const getEarningValues = async (totalSalePrice, totalExpenses, totalCostPrice) => ({
-        totalEarningVal1: totalSalePrice - totalExpenses,
-        totalEarningVal2: totalSalePrice - totalCostPrice,
-    });
+    const [originalProducts, refundProducts] = await Promise.all([getOriginalProducts(), getRefundProducts()]);
 
-    const [expenses, products] = await Promise.all([getExpenses(), getProducts()]);
+    const deductedProducts = deductRefunds(originalProducts, refundProducts);
+
+    return deductedProducts;
+};
+module.exports.getSalesReport = catchAsync(async function (req, res, next) {
+    const { startDate, endDate } = req.query;
+    const [expenses, products] = await Promise.all([getExpenses(startDate, endDate), getProducts(startDate, endDate)]);
     const [prices] = await Promise.all([getPrices(products)]);
     const earningValues = await getEarningValues(prices.totalSellPrice, expenses.totalExpenses, prices.totalCostPrice);
     res.status(200).send({ expenses, totalSales: products, prices, earningValues });
+});
+
+module.exports.getProfitLossReport = catchAsync(async function (req, res, next) {
+    const {
+        startDate,
+        endDate,
+        companyProfitVal1Percentage,
+        companyFutureCostVal1Percentage,
+        companyProfitVal2Percentage,
+        companyFutureCostVal2Percentage,
+    } = req.query;
+    const [products, expenses] = await Promise.all([getProducts(startDate, endDate), getExpenses(startDate, endDate)]);
+    const [prices] = await Promise.all([getPrices(products)]);
+    const [earningValues] = await Promise.all([
+        getEarningValues(prices.totalSellPrice, expenses.totalExpenses, prices.totalCostPrice),
+    ]);
+    res.status(200).send({
+        totalSellPrice: prices.totalSellPrice,
+        totalExpenses: expenses.totalExpenses,
+        totalCostPrice: prices.totalCostPrice,
+        totalEarningVal1: earningValues.totalEarningVal1,
+        totalEarningVal2: earningValues.totalEarningVal2,
+        companyProfitVal1: earningValues.totalEarningVal1 * (companyProfitVal1Percentage || 0) * 0.01,
+        companyFutureCostVal1: earningValues.totalEarningVal1 * (companyFutureCostVal1Percentage || 0) * 0.01,
+        companyProfitVal2: earningValues.totalEarningVal2 * (companyProfitVal2Percentage || 0) * 0.01,
+        companyFutureCostVal2: earningValues.totalEarningVal2 * (companyFutureCostVal2Percentage || 0) * 0.01,
+    });
 });
