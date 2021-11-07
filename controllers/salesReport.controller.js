@@ -87,10 +87,9 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
             refundBills.forEach((refundBill) => {
                 dbRefundProducts.push(
                     refundBill.products.map((p) => {
-                        // const amount = p.amount - p.amount * (refundBill.discountPercent / 100);
                         const costPricePerUnit = p.costPrice;
                         const costPrice = costPricePerUnit * p.qty;
-                        return { ...p, costPricePerUnit, costPrice };
+                        return { ...p, costPrice, costPricePerUnit };
                     })
                 );
             });
@@ -107,12 +106,11 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
                     const existingProduct = groupedRefundProducts[productIndex];
                     existingProduct.qty += refundProduct.qty;
                     existingProduct.amount += refundProduct.amount;
-                    existingProduct.costPrice += refundProduct.costPricePerUnit * refundProduct.costPrice;
+                    existingProduct.costPrice += refundProduct.costPricePerUnit * refundProduct.qty;
                 } else {
                     groupedRefundProducts.push(refundProduct);
                 }
             }
-
             return groupedRefundProducts;
         };
 
@@ -125,7 +123,6 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
                 );
 
                 if (originalProductIndex > -1) {
-                    // console.log(originals[originalProductIndex]);
                     originals[originalProductIndex].qty -= refundProduct.qty;
                     originals[originalProductIndex].amount -= refundProduct.amount;
                     originals[originalProductIndex].costPrice -= refundProduct.costPrice;
@@ -142,7 +139,23 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
         return deductedProducts;
     };
 
-    const [expenses, products] = await Promise.all([getExpenses(), getProducts()]);
+    const getPrices = async (distinctProducts) => {
+        let totalSellPrice = 0;
+        let totalCostPrice = 0;
+        distinctProducts.forEach((p) => {
+            totalSellPrice += p.amount;
+            totalCostPrice += p.costPrice;
+        });
+        return { totalSellPrice, totalCostPrice };
+    };
 
-    res.status(200).send({ expenses, products });
+    const getEarningValues = async (totalSalePrice, totalExpenses, totalCostPrice) => ({
+        totalEarningVal1: totalSalePrice - totalExpenses,
+        totalEarningVal2: totalSalePrice - totalCostPrice,
+    });
+
+    const [expenses, products] = await Promise.all([getExpenses(), getProducts()]);
+    const [prices] = await Promise.all([getPrices(products)]);
+    const earningValues = await getEarningValues(prices.totalSellPrice, expenses.totalExpenses, prices.totalCostPrice);
+    res.status(200).send({ expenses, totalSales: products, prices, earningValues });
 });
