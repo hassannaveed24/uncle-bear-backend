@@ -9,7 +9,7 @@ const schema = new mongoose.Schema({
     },
     phone: {
         type: String,
-        maxlength: [20, 'Maximum 20 characters are allowed in name'],
+        maxlength: [20, 'Maximum 20 characters are allowed in phone'],
     },
     balance: {
         type: Number,

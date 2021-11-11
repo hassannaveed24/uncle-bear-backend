@@ -78,16 +78,6 @@ module.exports.getAllCSV = catchAsync(async function (req, res, next) {
     res.status(200).send(csv);
 });
 
-// module.exports.addMany = catchAsync(async function (req, res, next) {
-//     const docs = req.body;
-
-//     if (!docs || !docs.length) return next(new AppError('Please enter valid customers', 400));
-
-//     await Model.insertMany(docs);
-
-//     res.status(200).json();
-// });
-
 module.exports.addOne = catchAsync(async function (req, res, next) {
     const newDoc = _.pick(req.body, ['name', 'phone', 'balance']);
     await Model.create({ ...newDoc, createdShop: res.locals.shop._id });

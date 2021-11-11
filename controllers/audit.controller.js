@@ -1,9 +1,5 @@
 const mongoose = require('mongoose');
 const _ = require('lodash');
-const Model = require('../models/bills.model');
-const Product = require('../models/products.model');
-const Unit = require('../models/units.model');
-const Supplier = require('../models/suppliers.model');
 const { catchAsync } = require('./errors.controller');
 const AppError = require('../utils/AppError');
 

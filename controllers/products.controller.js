@@ -68,22 +68,6 @@ module.exports.getbyGroups = catchAsync(async function (req, res, next) {
     res.status(200).json(results);
 });
 
-// module.exports.addMany = catchAsync(async function (req, res, next) {
-//     const docs = req.body.map((b) => _.pick(b, ['title', 'modelNumber', 'type']));
-
-//     if (docs.some((d) => d.length < 3)) return next(new AppError('Please enter valid products', 400));
-
-//     const typeIds = [...new Set(docs.map((d) => d.type))].map((id) => mongoose.Types.ObjectId(id));
-
-//     const types = await Type.find({ _id: { $in: typeIds } }, { title: 0, createdAt: 0, __v: 0 }).lean();
-
-//     if (types.length !== typeIds.length) return next(new AppError('Type id(s) invalid', 400));
-
-//     await Model.insertMany(docs);
-
-//     res.status(200).json();
-// });
-
 module.exports.addOne = catchAsync(async function (req, res, next) {
     const newDoc = _.pick(req.body, ['registeredGroupId', 'name', 'salePrice', 'costPrice', 'description']);
 

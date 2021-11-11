@@ -19,16 +19,6 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
     );
 });
 
-// module.exports.addMany = catchAsync(async function (req, res, next) {
-//     const docs = req.body;
-
-//     if (!docs || !docs.length) return next(new AppError('Please enter valid customers', 400));
-
-//     await Model.insertMany(docs);
-
-//     res.status(200).json();
-// });
-
 module.exports.addOne = catchAsync(async function (req, res, next) {
     const newDoc = _.pick(req.body, ['name', 'color', 'description']);
     await Model.create(newDoc);
@@ -38,7 +28,7 @@ module.exports.addOne = catchAsync(async function (req, res, next) {
 module.exports.edit = catchAsync(async function (req, res, next) {
     const { id } = req.params;
 
-    if (!mongoose.isValidObjectId(id)) return next(new AppError('Please enter a valid id', 400));
+    if (!mongoose.isValidObjectId(id)) return next(new AppError('Please enter valid id(s)', 400));
 
     const newDoc = _.pick(req.body, ['name', 'color', 'description']);
 

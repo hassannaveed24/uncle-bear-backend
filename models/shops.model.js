@@ -5,7 +5,7 @@ const schema = new mongoose.Schema({
     address: {
         type: String,
         required: [true, 'Please enter shop address'],
-        minlength: [4, 'Please enter a bare minimum of 4 characters in name'],
+        minlength: [4, 'Please enter a bare minimum of 4 characters in shop address'],
         maxlength: [255, 'Only 255 characters are allowed in shop address'],
     },
     phone: {

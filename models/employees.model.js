@@ -8,13 +8,11 @@ const schema = new mongoose.Schema({
     name: {
         type: String,
         required: [true, 'Please enter a name'],
-        minlength: [4, 'Please enter a bare minimum of 4 characters in name'],
         maxlength: [35, 'Only 35 characters are allowed in name'],
     },
     phone: {
         type: String,
-        minlength: [3, 'Please enter at least 3 characters as phone number'],
-        maxlength: [20, 'Maximum 20 characters are allowed in name'],
+        maxlength: [20, 'Maximum 20 characters are allowed in phone'],
     },
     idcard: {
         type: String,

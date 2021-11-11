@@ -6,7 +6,6 @@ const schema = new mongoose.Schema({
     product_bought: {
         type: String,
         required: [true, 'Please enter name for product bought'],
-        minlength: [4, 'Please enter a bare minimum of 4 characters in product bought'],
         maxlength: [255, 'Only 255 characters are allowed in product bought'],
     },
     price: {
@@ -15,7 +14,7 @@ const schema = new mongoose.Schema({
     },
     detail: {
         type: String,
-        maxlength: [255, 'Only 255 characters are allowed in product bought'],
+        maxlength: [255, 'Only 255 characters are allowed in detail'],
     },
     qty: {
         type: Number,

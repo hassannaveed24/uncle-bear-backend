@@ -6,7 +6,6 @@ const cors = require('cors');
 const Database = require('./utils/db');
 const AppError = require('./utils/AppError');
 
-const tilesRoute = require('./routes/products.route');
 const normalCustomersRoute = require('./routes/normalCustomers.route');
 const vipCustomersRoute = require('./routes/vipCustomers.route');
 const shopsRoute = require('./routes/shops.route');
@@ -16,17 +15,12 @@ const rawMaterialExpensesRoute = require('./routes/rawMaterialExpenses.route');
 const shopExpensesRoute = require('./routes/shopExpenses.route');
 const salariesExpensesRoute = require('./routes/salariesExpenses.route');
 const employeesRoute = require('./routes/employees.route');
-const suppliersRoute = require('./routes/suppliers.route');
-const typesRoute = require('./routes/types.route');
-const unitsRoute = require('./routes/units.route');
 const inventoriesRoute = require('./routes/inventories.route');
 const billsRoute = require('./routes/bills.route');
 const auditRoute = require('./routes/audit.route');
-const salesRoute = require('./routes/sales.route');
 
 const authRoute = require('./routes/auth.route');
 const { errorController } = require('./controllers/errors.controller');
-const { restrictToShop } = require('./middlewares/createdShop.middleware');
 
 const app = express();
 
@@ -64,12 +58,6 @@ app.listen(port, () => {
     app.use('/bills', billsRoute);
     app.use('/audit', auditRoute);
     app.use('/auth', authRoute);
-    // app.use('/suppliers', suppliersRoute);
-    // app.use('/types', typesRoute);
-    // app.use('/units', unitsRoute);
-    // // app.use('/sales', salesRoute);
-
-    // // app.use('/categories', protect, categoriesRoute);
 
     app.use('*', (req, res, next) => next(new AppError(`Cannot find ${req.originalUrl} on the server!`, 404)));
 
