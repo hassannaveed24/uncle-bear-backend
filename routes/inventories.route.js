@@ -5,6 +5,7 @@ const {
     getAll,
     addOne,
     remove,
+    removeInventory,
     edit,
     pay,
     addMany,
@@ -21,5 +22,6 @@ router.get('/transactions/:type/get-csv', autoParams, restrictToShop, getTransac
 router.post('/', restrictToShop, addOne);
 router.patch('/id/:id', restrictToShop, edit);
 router.route('/id/:id').delete(remove);
+router.route('/inventory-list/id/:id').delete(removeInventory);
 
 module.exports = router;
